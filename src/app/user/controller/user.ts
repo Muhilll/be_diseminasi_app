@@ -2,6 +2,7 @@ import { Context } from "hono";
 import { UserModel } from "../model/user";
 import { generateToken } from "../../../utils/jwt";
 import { compare, hash } from "bcryptjs";
+import { TokenPayload } from "../../../utils/jwt";
 
 export class UserController {
   // POST login - Generate JWT token
@@ -79,6 +80,40 @@ export class UserController {
         success: true,
         data: users,
         message: "Users fetched successfully",
+      });
+    } catch (error) {
+      return c.json(
+        {
+          success: false,
+          message:
+            error instanceof Error ? error.message : "Internal server error",
+        },
+        500,
+      );
+    }
+  }
+
+  // GET current user navigation
+  static async getNavigation(c: Context) {
+    try {
+      const user = c.get("user") as TokenPayload | undefined;
+
+      if (!user?.role_id) {
+        return c.json(
+          {
+            success: false,
+            message: "Unauthorized - User role not found",
+          },
+          401,
+        );
+      }
+
+      const navigation = await UserModel.getNavigationByRoleId(user.role_id);
+
+      return c.json({
+        success: true,
+        data: navigation,
+        message: "Navigation fetched successfully",
       });
     } catch (error) {
       return c.json(

@@ -51,6 +51,7 @@ export class MenuModel {
   static async createMenu(data: {
     name: string;
     path: string;
+    icon?: string | null;
     parent_id?: number | null;
   }) {
     try {
@@ -67,6 +68,7 @@ export class MenuModel {
     data: Partial<{
       name: string;
       path: string;
+      icon: string | null;
       parent_id: number | null;
     }>
   ) {

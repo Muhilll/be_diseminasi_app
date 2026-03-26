@@ -14,6 +14,9 @@ router.use("/*", jwtMiddleware, appTokenMiddleware);
 // GET all users
 router.get("/", UserController.getAll);
 
+// GET current user navigation
+router.get("/me/navigation", UserController.getNavigation);
+
 // GET user by ID
 router.get("/:id", UserController.getById);
 
