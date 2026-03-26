@@ -1,0 +1,5 @@
+# deps
+node_modules/
+.env
+SECURITY.md
+MVC_GUIDE.md
