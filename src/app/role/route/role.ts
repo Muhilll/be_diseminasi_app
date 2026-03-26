@@ -1,11 +1,12 @@
 import { Hono } from "hono";
 import { RoleController } from "../controller/role";
 import { jwtMiddleware } from "../../../middleware/auth";
+import { appTokenMiddleware } from "../../../middleware/appToken";
 
 const router = new Hono();
 
 // All role endpoints require JWT
-router.use("/*", jwtMiddleware);
+router.use("/*", jwtMiddleware, appTokenMiddleware);
 
 // GET all roles
 router.get("/", RoleController.getAll);

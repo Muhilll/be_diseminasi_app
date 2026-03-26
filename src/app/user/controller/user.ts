@@ -1,6 +1,7 @@
 import { Context } from "hono";
 import { UserModel } from "../model/user";
 import { generateToken } from "../../../utils/jwt";
+import { compare, hash } from "bcryptjs";
 
 export class UserController {
   // POST login - Generate JWT token
@@ -28,9 +29,9 @@ export class UserController {
         );
       }
 
-      // Simple password check (in production, use bcrypt or similar)
-      // TODO: Use bcrypt to hash passwords
-      if (user.password !== body.password) {
+      // Compare password using bcryptjs
+      const isPasswordValid = await compare(body.password, user.password);
+      if (!isPasswordValid) {
         return c.json(
           { success: false, message: "Invalid email or password" },
           401,
@@ -151,7 +152,13 @@ export class UserController {
         );
       }
 
-      const result = await UserModel.createUser(body);
+      // Hash password before creating user
+      const hashedPassword = await hash(body.password, 10);
+
+      const result = await UserModel.createUser({
+        ...body,
+        password: hashedPassword,
+      });
 
       return c.json(
         {
@@ -193,7 +200,13 @@ export class UserController {
         return c.json({ success: false, message: "User not found" }, 404);
       }
 
-      const result = await UserModel.updateUser(id, body);
+      // Hash password if being updated
+      let updateData = body;
+      if (body.password) {
+        updateData.password = await hash(body.password, 10);
+      }
+
+      const result = await UserModel.updateUser(id, updateData);
 
       return c.json({
         success: true,

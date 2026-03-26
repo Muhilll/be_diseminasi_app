@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { UserController } from "../controller/user";
 import { jwtMiddleware } from "../../../middleware/auth";
+import { appTokenMiddleware } from "../../../middleware/appToken";
 
 const router = new Hono();
 
@@ -8,7 +9,7 @@ const router = new Hono();
 router.post("/login", UserController.login);
 
 // Protected endpoints - Require JWT
-router.use("/*", jwtMiddleware);
+router.use("/*", jwtMiddleware, appTokenMiddleware);
 
 // GET all users
 router.get("/", UserController.getAll);

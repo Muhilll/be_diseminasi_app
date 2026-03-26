@@ -3,6 +3,12 @@ import { logger } from 'hono/logger';
 import { loggerMiddleware, appTokenMiddleware } from './middleware/appToken';
 import userRoutes from './app/user/route/user';
 import roleRoutes from './app/role/route/role';
+import menuRoutes from './app/menu/route/menu';
+import gradeRoutes from './app/grade/route/grade';
+import positionRoutes from './app/position/route/position';
+import rolePermissionRoutes from './app/role_permission/route/role_permission';
+import disseminationRoutes from './app/dissemination/route/dissemination';
+import disseminationDetailRoutes from './app/dissemination_detail/route/dissemination_detail';
 
 const app = new Hono();
 
@@ -33,17 +39,12 @@ app.get('/api/health', (c) => {
 // Note: User routes have public login endpoint, others require JWT
 app.route('/api/users', userRoutes);
 app.route('/api/roles', roleRoutes);
-
-// Admin/Internal APIs - Require APP_TOKEN
-app.get('/api/admin/stats', appTokenMiddleware, (c) => {
-  return c.json({
-    success: true,
-    data: {
-      message: "Admin statistics endpoint",
-    },
-    message: "Stats fetched successfully",
-  });
-});
+app.route('/api/menus', menuRoutes);
+app.route('/api/grades', gradeRoutes);
+app.route('/api/positions', positionRoutes);
+app.route('/api/role-permissions', rolePermissionRoutes);
+app.route('/api/disseminations', disseminationRoutes);
+app.route('/api/dissemination-details', disseminationDetailRoutes);
 
 // 404 handler
 app.notFound((c) => {

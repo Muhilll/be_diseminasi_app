@@ -11,14 +11,23 @@ import {
 } from "drizzle-orm/mysql-core";
 import { sql } from "drizzle-orm/sql/sql";
 
-export const menus = mysqlTable("menus", {
-  id: int().primaryKey().autoincrement(),
-  name: varchar({ length: 100 }).notNull(),
-  path: varchar({ length: 255 }).notNull(),
-  parent_id: int(),
-  created_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
-updated_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
-});
+export const menus = mysqlTable(
+  "menus",
+  {
+    id: int().primaryKey().autoincrement(),
+    name: varchar({ length: 100 }).notNull(),
+    path: varchar({ length: 255 }).notNull(),
+    parent_id: int(),
+    created_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
+    updated_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
+  },
+  (table) => ({
+    parent_fk: foreignKey({
+      columns: [table.parent_id],
+      foreignColumns: [table.id],
+    }),
+  })
+);
 
 // Roles Table
 export const roles = mysqlTable("roles", {
@@ -49,19 +58,36 @@ updated_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
 // Users Table
-export const users = mysqlTable("users", {
-  id: int().primaryKey().autoincrement(),
-  email: varchar({ length: 100 }).notNull().unique(),
-  password: varchar({ length: 255 }).notNull(),
-  employee_id: varchar({ length: 50 }),
-  name: varchar({ length: 100 }).notNull(),
-  grade_id: int().notNull(),
-  position_id: int().notNull(),
-  signature_image: varchar({ length: 255 }),
-  role_id: int().notNull(),
-  created_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
-updated_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
-});
+export const users = mysqlTable(
+  "users",
+  {
+    id: int().primaryKey().autoincrement(),
+    email: varchar({ length: 100 }).notNull().unique(),
+    password: varchar({ length: 255 }).notNull(),
+    employee_id: varchar({ length: 50 }),
+    name: varchar({ length: 100 }).notNull(),
+    grade_id: int().notNull(),
+    position_id: int().notNull(),
+    signature_image: varchar({ length: 255 }),
+    role_id: int().notNull(),
+    created_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
+    updated_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
+  },
+  (table) => ({
+    grade_fk: foreignKey({
+      columns: [table.grade_id],
+      foreignColumns: [grades.id],
+    }),
+    position_fk: foreignKey({
+      columns: [table.position_id],
+      foreignColumns: [positions.id],
+    }),
+    role_fk: foreignKey({
+      columns: [table.role_id],
+      foreignColumns: [roles.id],
+    }),
+  })
+);
 
 // Role Permissions Table
 export const role_permissions = mysqlTable(
@@ -91,20 +117,29 @@ updated_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
 );
 
 // Disseminations Table
-export const disseminations = mysqlTable("disseminations", {
-  id: int().primaryKey().autoincrement(),
-  title: varchar({ length: 255 }).notNull(),
-  month: int().notNull(),
-  year: int().notNull(),
-  province: varchar({ length: 100 }).notNull(),
-  city: varchar({ length: 100 }).notNull(),
-  district: varchar({ length: 100 }).notNull(),
-  village: varchar({ length: 100 }).notNull(),
-  date: datetime().notNull(),
-  user_id: int().notNull(),
-  created_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
-updated_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
-});
+export const disseminations = mysqlTable(
+  "disseminations",
+  {
+    id: int().primaryKey().autoincrement(),
+    title: varchar({ length: 255 }).notNull(),
+    month: int().notNull(),
+    year: int().notNull(),
+    province: varchar({ length: 100 }).notNull(),
+    city: varchar({ length: 100 }).notNull(),
+    district: varchar({ length: 100 }).notNull(),
+    village: varchar({ length: 100 }).notNull(),
+    date: datetime().notNull(),
+    user_id: int().notNull(),
+    created_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
+    updated_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
+  },
+  (table) => ({
+    user_fk: foreignKey({
+      columns: [table.user_id],
+      foreignColumns: [users.id],
+    }),
+  })
+);
 
 // Disseminations Details Table
 export const disseminations_details = mysqlTable(
