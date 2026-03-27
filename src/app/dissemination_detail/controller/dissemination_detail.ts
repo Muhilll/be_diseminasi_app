@@ -2,6 +2,19 @@ import { Context } from "hono";
 import { DisseminationDetailModel } from "../model/dissemination_detail";
 
 export class DisseminationDetailController {
+  private static parseDateValue(value: unknown) {
+    if (value === undefined || value === null || value === "") {
+      return undefined;
+    }
+
+    if (value instanceof Date) {
+      return Number.isNaN(value.getTime()) ? undefined : value;
+    }
+
+    const parsedDate = new Date(String(value));
+    return Number.isNaN(parsedDate.getTime()) ? undefined : parsedDate;
+  }
+
   // GET all dissemination details
   static async getAll(c: Context) {
     try {
@@ -112,6 +125,7 @@ export class DisseminationDetailController {
   static async create(c: Context) {
     try {
       const body = await c.req.json();
+      const parsedDate = DisseminationDetailController.parseDateValue(body.date);
 
       if (!body.disseminations_id) {
         return c.json(
@@ -124,7 +138,10 @@ export class DisseminationDetailController {
       }
 
       const result =
-        await DisseminationDetailModel.createDisseminationDetail(body);
+        await DisseminationDetailModel.createDisseminationDetail({
+          ...body,
+          ...(parsedDate !== undefined ? { date: parsedDate } : {}),
+        });
 
       return c.json(
         {
@@ -164,6 +181,20 @@ export class DisseminationDetailController {
       }
 
       const body = await c.req.json();
+      const parsedDate =
+        body.date !== undefined
+          ? DisseminationDetailController.parseDateValue(body.date)
+          : undefined;
+
+      if (body.date !== undefined && parsedDate === undefined) {
+        return c.json(
+          {
+            success: false,
+            message: "Invalid date format",
+          },
+          400,
+        );
+      }
 
       const detail =
         await DisseminationDetailModel.getDisseminationDetailById(id);
@@ -176,7 +207,10 @@ export class DisseminationDetailController {
 
       const result = await DisseminationDetailModel.updateDisseminationDetail(
         id,
-        body
+        {
+          ...body,
+          ...(parsedDate !== undefined ? { date: parsedDate } : {}),
+        }
       );
 
       return c.json({

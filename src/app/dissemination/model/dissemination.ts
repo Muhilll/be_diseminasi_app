@@ -5,8 +5,6 @@ import { eq } from "drizzle-orm";
 type DisseminationWithRelationsRow = {
   id: number;
   title: string;
-  month: number;
-  year: number;
   province: string;
   city: string;
   district: string;
@@ -28,8 +26,6 @@ type DisseminationWithRelationsRow = {
 type PublicDissemination = {
   id: number;
   title: string;
-  month: number;
-  year: number;
   province: string;
   city: string;
   district: string;
@@ -57,8 +53,6 @@ export class DisseminationModel {
     return {
       id: dissemination.id,
       title: dissemination.title,
-      month: dissemination.month,
-      year: dissemination.year,
       province: dissemination.province,
       city: dissemination.city,
       district: dissemination.district,
@@ -87,8 +81,6 @@ export class DisseminationModel {
         .select({
           id: disseminations.id,
           title: disseminations.title,
-          month: disseminations.month,
-          year: disseminations.year,
           province: disseminations.province,
           city: disseminations.city,
           district: disseminations.district,
@@ -122,8 +114,6 @@ export class DisseminationModel {
         .select({
           id: disseminations.id,
           title: disseminations.title,
-          month: disseminations.month,
-          year: disseminations.year,
           province: disseminations.province,
           city: disseminations.city,
           district: disseminations.district,
@@ -159,8 +149,6 @@ export class DisseminationModel {
         .select({
           id: disseminations.id,
           title: disseminations.title,
-          month: disseminations.month,
-          year: disseminations.year,
           province: disseminations.province,
           city: disseminations.city,
           district: disseminations.district,
@@ -191,8 +179,6 @@ export class DisseminationModel {
   // Create dissemination
   static async createDissemination(data: {
     title: string;
-    month: number;
-    year: number;
     province: string;
     city: string;
     district: string;
@@ -213,8 +199,6 @@ export class DisseminationModel {
     id: number,
     data: Partial<{
       title: string;
-      month: number;
-      year: number;
       province: string;
       city: string;
       district: string;

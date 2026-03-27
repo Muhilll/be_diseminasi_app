@@ -126,8 +126,6 @@ export class DisseminationController {
 
       if (
         !body.title ||
-        !body.month ||
-        !body.year ||
         !body.province ||
         !body.city ||
         !body.district ||
@@ -139,7 +137,7 @@ export class DisseminationController {
           {
             success: false,
             message:
-              "Title, month, year, province, city, district, village, date, and user_id are required",
+              "Title, province, city, district, village, date, and user_id are required",
           },
           400,
         );

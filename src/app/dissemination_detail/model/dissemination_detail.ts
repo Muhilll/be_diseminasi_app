@@ -48,7 +48,7 @@ export class DisseminationDetailModel {
     date?: Date;
     location?: string;
     methode?: string;
-    participants?: number;
+    participants?: string;
     result?: string;
     image?: string;
   }) {
@@ -70,7 +70,7 @@ export class DisseminationDetailModel {
       date: Date;
       location: string;
       methode: string;
-      participants: number;
+      participants: string;
       result: string;
       image: string;
     }>

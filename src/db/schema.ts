@@ -123,8 +123,6 @@ export const disseminations = mysqlTable(
   {
     id: int().primaryKey().autoincrement(),
     title: varchar({ length: 255 }).notNull(),
-    month: int().notNull(),
-    year: int().notNull(),
     province: varchar({ length: 100 }).notNull(),
     city: varchar({ length: 100 }).notNull(),
     district: varchar({ length: 100 }).notNull(),
@@ -153,7 +151,7 @@ export const disseminations_details = mysqlTable(
     date: datetime(),
     location: varchar({ length: 255 }),
     methode: varchar({ length: 100 }),
-    participants: int(),
+    participants: varchar({ length: 255 }),
     result: text(),
     image: varchar({ length: 255 }),
     created_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
