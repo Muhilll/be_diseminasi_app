@@ -2,6 +2,19 @@ import { Context } from "hono";
 import { DisseminationModel } from "../model/dissemination";
 
 export class DisseminationController {
+  private static parseDateValue(value: unknown) {
+    if (value === undefined || value === null || value === "") {
+      return null;
+    }
+
+    if (value instanceof Date) {
+      return Number.isNaN(value.getTime()) ? null : value;
+    }
+
+    const parsedDate = new Date(String(value));
+    return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+  }
+
   // GET all disseminations
   static async getAll(c: Context) {
     try {
@@ -109,6 +122,7 @@ export class DisseminationController {
   static async create(c: Context) {
     try {
       const body = await c.req.json();
+      const parsedDate = DisseminationController.parseDateValue(body.date);
 
       if (
         !body.title ||
@@ -118,7 +132,7 @@ export class DisseminationController {
         !body.city ||
         !body.district ||
         !body.village ||
-        !body.date ||
+        !parsedDate ||
         !body.user_id
       ) {
         return c.json(
@@ -131,7 +145,10 @@ export class DisseminationController {
         );
       }
 
-      const result = await DisseminationModel.createDissemination(body);
+      const result = await DisseminationModel.createDissemination({
+        ...body,
+        date: parsedDate,
+      });
 
       return c.json(
         {
@@ -171,6 +188,20 @@ export class DisseminationController {
       }
 
       const body = await c.req.json();
+      const parsedDate =
+        body.date !== undefined
+          ? DisseminationController.parseDateValue(body.date)
+          : undefined;
+
+      if (body.date !== undefined && !parsedDate) {
+        return c.json(
+          {
+            success: false,
+            message: "Invalid date format",
+          },
+          400,
+        );
+      }
 
       const dissemination = await DisseminationModel.getDisseminationById(id);
       if (!dissemination) {
@@ -180,7 +211,10 @@ export class DisseminationController {
         );
       }
 
-      const result = await DisseminationModel.updateDissemination(id, body);
+      const result = await DisseminationModel.updateDissemination(id, {
+        ...body,
+        ...(parsedDate !== undefined ? { date: parsedDate } : {}),
+      });
 
       return c.json({
         success: true,

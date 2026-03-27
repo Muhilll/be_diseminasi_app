@@ -1,13 +1,115 @@
 import { db } from "../../../db";
-import { disseminations } from "../../../db/schema";
+import { disseminations, users } from "../../../db/schema";
 import { eq } from "drizzle-orm";
 
+type DisseminationWithRelationsRow = {
+  id: number;
+  title: string;
+  month: number;
+  year: number;
+  province: string;
+  city: string;
+  district: string;
+  village: string;
+  date: Date;
+  user_id: number;
+  created_at: Date;
+  updated_at: Date;
+  user_ref_id: number;
+  user_email: string;
+  user_employee_id: string | null;
+  user_name: string;
+  user_grade_id: number;
+  user_position_id: number;
+  user_signature_image: string | null;
+  user_role_id: number;
+};
+
+type PublicDissemination = {
+  id: number;
+  title: string;
+  month: number;
+  year: number;
+  province: string;
+  city: string;
+  district: string;
+  village: string;
+  date: Date;
+  user_id: number;
+  created_at: Date;
+  updated_at: Date;
+  user: {
+    id: number;
+    email: string;
+    employee_id: string | null;
+    name: string;
+    grade_id: number;
+    position_id: number;
+    signature_image: string | null;
+    role_id: number;
+  };
+};
+
 export class DisseminationModel {
+  private static mapDissemination(
+    dissemination: DisseminationWithRelationsRow,
+  ): PublicDissemination {
+    return {
+      id: dissemination.id,
+      title: dissemination.title,
+      month: dissemination.month,
+      year: dissemination.year,
+      province: dissemination.province,
+      city: dissemination.city,
+      district: dissemination.district,
+      village: dissemination.village,
+      date: dissemination.date,
+      user_id: dissemination.user_id,
+      created_at: dissemination.created_at,
+      updated_at: dissemination.updated_at,
+      user: {
+        id: dissemination.user_ref_id,
+        email: dissemination.user_email,
+        employee_id: dissemination.user_employee_id,
+        name: dissemination.user_name,
+        grade_id: dissemination.user_grade_id,
+        position_id: dissemination.user_position_id,
+        signature_image: dissemination.user_signature_image,
+        role_id: dissemination.user_role_id,
+      },
+    };
+  }
+
   // Get all disseminations
   static async getAllDisseminations() {
     try {
-      const result = await db.select().from(disseminations);
-      return result;
+      const result = await db
+        .select({
+          id: disseminations.id,
+          title: disseminations.title,
+          month: disseminations.month,
+          year: disseminations.year,
+          province: disseminations.province,
+          city: disseminations.city,
+          district: disseminations.district,
+          village: disseminations.village,
+          date: disseminations.date,
+          user_id: disseminations.user_id,
+          created_at: disseminations.created_at,
+          updated_at: disseminations.updated_at,
+          user_ref_id: users.id,
+          user_email: users.email,
+          user_employee_id: users.employee_id,
+          user_name: users.name,
+          user_grade_id: users.grade_id,
+          user_position_id: users.position_id,
+          user_signature_image: users.signature_image,
+          user_role_id: users.role_id,
+        })
+        .from(disseminations)
+        .innerJoin(users, eq(disseminations.user_id, users.id));
+
+      return result.map((item) => this.mapDissemination(item));
     } catch (error) {
       throw new Error(`Failed to fetch disseminations: ${error}`);
     }
@@ -17,11 +119,34 @@ export class DisseminationModel {
   static async getDisseminationById(id: number) {
     try {
       const result = await db
-        .select()
+        .select({
+          id: disseminations.id,
+          title: disseminations.title,
+          month: disseminations.month,
+          year: disseminations.year,
+          province: disseminations.province,
+          city: disseminations.city,
+          district: disseminations.district,
+          village: disseminations.village,
+          date: disseminations.date,
+          user_id: disseminations.user_id,
+          created_at: disseminations.created_at,
+          updated_at: disseminations.updated_at,
+          user_ref_id: users.id,
+          user_email: users.email,
+          user_employee_id: users.employee_id,
+          user_name: users.name,
+          user_grade_id: users.grade_id,
+          user_position_id: users.position_id,
+          user_signature_image: users.signature_image,
+          user_role_id: users.role_id,
+        })
         .from(disseminations)
+        .innerJoin(users, eq(disseminations.user_id, users.id))
         .where(eq(disseminations.id, id))
         .limit(1);
-      return result[0] || null;
+
+      return result[0] ? this.mapDissemination(result[0]) : null;
     } catch (error) {
       throw new Error(`Failed to fetch dissemination: ${error}`);
     }
@@ -31,10 +156,33 @@ export class DisseminationModel {
   static async getDisseminationsByUserId(userId: number) {
     try {
       const result = await db
-        .select()
+        .select({
+          id: disseminations.id,
+          title: disseminations.title,
+          month: disseminations.month,
+          year: disseminations.year,
+          province: disseminations.province,
+          city: disseminations.city,
+          district: disseminations.district,
+          village: disseminations.village,
+          date: disseminations.date,
+          user_id: disseminations.user_id,
+          created_at: disseminations.created_at,
+          updated_at: disseminations.updated_at,
+          user_ref_id: users.id,
+          user_email: users.email,
+          user_employee_id: users.employee_id,
+          user_name: users.name,
+          user_grade_id: users.grade_id,
+          user_position_id: users.position_id,
+          user_signature_image: users.signature_image,
+          user_role_id: users.role_id,
+        })
         .from(disseminations)
+        .innerJoin(users, eq(disseminations.user_id, users.id))
         .where(eq(disseminations.user_id, userId));
-      return result;
+
+      return result.map((item) => this.mapDissemination(item));
     } catch (error) {
       throw new Error(`Failed to fetch disseminations: ${error}`);
     }
