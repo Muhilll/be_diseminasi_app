@@ -1,5 +1,12 @@
 import { db } from "../../../db";
-import { menus, role_permissions, users } from "../../../db/schema";
+import {
+  grades,
+  menus,
+  positions,
+  role_permissions,
+  roles,
+  users,
+} from "../../../db/schema";
 import { eq } from "drizzle-orm";
 
 type NavigationPermission = {
@@ -20,14 +27,124 @@ type NavigationItem = {
   children: NavigationItem[];
 };
 
+type UserWithRelationsRow = {
+  id: number;
+  email: string;
+  employee_id: string | null;
+  name: string;
+  grade_id: number;
+  position_id: number;
+  signature_image: string | null;
+  role_id: number;
+  created_at: Date;
+  updated_at: Date;
+  role_ref_id: number;
+  role_code: string;
+  role_name: string;
+  grade_ref_id: number;
+  grade_level: number;
+  grade_name: string;
+  grade_des: string | null;
+  position_ref_id: number;
+  position_category: string;
+  position_des: string | null;
+};
+
+type PublicUser = {
+  id: number;
+  email: string;
+  employee_id: string | null;
+  name: string;
+  grade_id: number;
+  position_id: number;
+  signature_image: string | null;
+  role_id: number;
+  created_at: Date;
+  updated_at: Date;
+  role: {
+    id: number;
+    code: string;
+    name: string;
+  };
+  grade: {
+    id: number;
+    level: number;
+    grade: string;
+    des: string | null;
+  };
+  position: {
+    id: number;
+    category: string;
+    des: string | null;
+  };
+};
+
 export class UserModel {
+  private static mapUserWithRelations(user: UserWithRelationsRow): PublicUser {
+    return {
+      id: user.id,
+      email: user.email,
+      employee_id: user.employee_id,
+      name: user.name,
+      grade_id: user.grade_id,
+      position_id: user.position_id,
+      signature_image: user.signature_image,
+      role_id: user.role_id,
+      created_at: user.created_at,
+      updated_at: user.updated_at,
+      role: {
+        id: user.role_ref_id,
+        code: user.role_code,
+        name: user.role_name,
+      },
+      grade: {
+        id: user.grade_ref_id,
+        level: user.grade_level,
+        grade: user.grade_name,
+        des: user.grade_des,
+      },
+      position: {
+        id: user.position_ref_id,
+        category: user.position_category,
+        des: user.position_des,
+      },
+    };
+  }
+
   // Get semua users
   static async getAllUsers() {
     try {
-      const result = await db.select().from(users);
-      return result;
+      const result = await db
+        .select({
+          id: users.id,
+          email: users.email,
+          employee_id: users.employee_id,
+          name: users.name,
+          grade_id: users.grade_id,
+          position_id: users.position_id,
+          signature_image: users.signature_image,
+          role_id: users.role_id,
+          created_at: users.created_at,
+          updated_at: users.updated_at,
+          role_ref_id: roles.id,
+          role_code: roles.code,
+          role_name: roles.name,
+          grade_ref_id: grades.id,
+          grade_level: grades.level,
+          grade_name: grades.grade,
+          grade_des: grades.des,
+          position_ref_id: positions.id,
+          position_category: positions.category,
+          position_des: positions.des,
+        })
+        .from(users)
+        .innerJoin(roles, eq(users.role_id, roles.id))
+        .innerJoin(grades, eq(users.grade_id, grades.id))
+        .innerJoin(positions, eq(users.position_id, positions.id));
+
+      return result.map((user) => this.mapUserWithRelations(user));
     } catch (error) {
-      throw new Error(`Failed to fetch users: ${error}`); 
+      throw new Error(`Failed to fetch users: ${error}`);
     }
   }
 
@@ -35,11 +152,36 @@ export class UserModel {
   static async getUserById(id: number) {
     try {
       const result = await db
-        .select()
+        .select({
+          id: users.id,
+          email: users.email,
+          employee_id: users.employee_id,
+          name: users.name,
+          grade_id: users.grade_id,
+          position_id: users.position_id,
+          signature_image: users.signature_image,
+          role_id: users.role_id,
+          created_at: users.created_at,
+          updated_at: users.updated_at,
+          role_ref_id: roles.id,
+          role_code: roles.code,
+          role_name: roles.name,
+          grade_ref_id: grades.id,
+          grade_level: grades.level,
+          grade_name: grades.grade,
+          grade_des: grades.des,
+          position_ref_id: positions.id,
+          position_category: positions.category,
+          position_des: positions.des,
+        })
         .from(users)
+        .innerJoin(roles, eq(users.role_id, roles.id))
+        .innerJoin(grades, eq(users.grade_id, grades.id))
+        .innerJoin(positions, eq(users.position_id, positions.id))
         .where(eq(users.id, id))
         .limit(1);
-      return result[0] || null;
+
+      return result[0] ? this.mapUserWithRelations(result[0]) : null;
     } catch (error) {
       throw new Error(`Failed to fetch user: ${error}`);
     }
