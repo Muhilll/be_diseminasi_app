@@ -2,14 +2,14 @@ import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
 import { loggerMiddleware, appTokenMiddleware } from './middleware/appToken';
-import userRoutes from './app/user/route/user';
-import roleRoutes from './app/role/route/role';
-import menuRoutes from './app/menu/route/menu';
-import gradeRoutes from './app/grade/route/grade';
-import positionRoutes from './app/position/route/position';
-import rolePermissionRoutes from './app/role_permission/route/role_permission';
-import disseminationRoutes from './app/dissemination/route/dissemination';
-import disseminationDetailRoutes from './app/dissemination_detail/route/dissemination_detail';
+import userRoutes from './app/user/route/user.route';
+import roleRoutes from './app/role/route/role.route';
+import menuRoutes from './app/menu/route/menu.route';
+import gradeRoutes from './app/grade/route/grade.route';
+import positionRoutes from './app/position/route/position.route';
+import rolePermissionRoutes from './app/role_permission/route/role-permission.route';
+import disseminationRoutes from './app/dissemination/route/dissemination.route';
+import disseminationDetailRoutes from './app/dissemination_detail/route/dissemination-detail.route';
 
 const app = new Hono();
 
