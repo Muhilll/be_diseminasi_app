@@ -1,8 +1,16 @@
+CREATE TABLE `absensis` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`gambar` varchar(255),
+	`des` text,
+	`user_id` int NOT NULL,
+	`created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	`updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	CONSTRAINT `absensis_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
 CREATE TABLE `disseminations` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`title` varchar(255) NOT NULL,
-	`month` int NOT NULL,
-	`year` int NOT NULL,
 	`province` varchar(100) NOT NULL,
 	`city` varchar(100) NOT NULL,
 	`district` varchar(100) NOT NULL,
@@ -22,7 +30,7 @@ CREATE TABLE `disseminations_details` (
 	`date` datetime,
 	`location` varchar(255),
 	`methode` varchar(100),
-	`participants` int,
+	`participants` varchar(255),
 	`result` text,
 	`image` varchar(255),
 	`created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -44,6 +52,7 @@ CREATE TABLE `menus` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`name` varchar(100) NOT NULL,
 	`path` varchar(255) NOT NULL,
+	`icon` varchar(255),
 	`parent_id` int,
 	`created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	`updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -99,6 +108,7 @@ CREATE TABLE `users` (
 	CONSTRAINT `users_email_unique` UNIQUE(`email`)
 );
 --> statement-breakpoint
+ALTER TABLE `absensis` ADD CONSTRAINT `absensis_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `disseminations` ADD CONSTRAINT `disseminations_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `disseminations_details` ADD CONSTRAINT `disseminations_details_disseminations_id_disseminations_id_fk` FOREIGN KEY (`disseminations_id`) REFERENCES `disseminations`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `menus` ADD CONSTRAINT `menus_parent_id_menus_id_fk` FOREIGN KEY (`parent_id`) REFERENCES `menus`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint

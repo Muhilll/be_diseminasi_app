@@ -90,6 +90,25 @@ export const users = mysqlTable(
   })
 );
 
+// Absensis Table
+export const absensis = mysqlTable(
+  "absensis",
+  {
+    id: int().primaryKey().autoincrement(),
+    gambar: varchar({ length: 255 }),
+    des: text(),
+    user_id: int().notNull(),
+    created_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
+    updated_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
+  },
+  (table) => ({
+    user_fk: foreignKey({
+      columns: [table.user_id],
+      foreignColumns: [users.id],
+    }),
+  })
+);
+
 // Role Permissions Table
 export const role_permissions = mysqlTable(
   "role_permissions",

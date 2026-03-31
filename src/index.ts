@@ -10,6 +10,7 @@ import positionRoutes from './app/position/route/position.route';
 import rolePermissionRoutes from './app/role_permission/route/role-permission.route';
 import disseminationRoutes from './app/dissemination/route/dissemination.route';
 import disseminationDetailRoutes from './app/dissemination_detail/route/dissemination-detail.route';
+import absensiRoutes from './app/absensi/route/absensi.route';
 
 const app = new Hono();
 
@@ -52,6 +53,7 @@ app.route('/api/positions', positionRoutes);
 app.route('/api/role-permissions', rolePermissionRoutes);
 app.route('/api/disseminations', disseminationRoutes);
 app.route('/api/dissemination-details', disseminationDetailRoutes);
+app.route('/api/absensis', absensiRoutes);
 
 // 404 handler
 app.notFound((c) => {

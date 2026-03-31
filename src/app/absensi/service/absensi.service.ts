@@ -1,0 +1,79 @@
+import { AbsensiWithRelationsRow } from "../contract/absensi.contract";
+import {
+  CreateAbsensiRequestDto,
+  UpdateAbsensiRequestDto,
+} from "../dto/absensi-request.dto";
+import { AbsensiResponseDto } from "../dto/absensi-response.dto";
+import { AbsensiReadRepository } from "../repository/absensi-read.repository";
+import { AbsensiWriteRepository } from "../repository/absensi-write.repository";
+
+export class AbsensiService {
+  private static mapAbsensi(absensi: AbsensiWithRelationsRow): AbsensiResponseDto {
+    return {
+      id: absensi.id,
+      gambar: absensi.gambar,
+      des: absensi.des,
+      user_id: absensi.user_id,
+      created_at: absensi.created_at,
+      updated_at: absensi.updated_at,
+      user: {
+        id: absensi.user_ref_id,
+        email: absensi.user_email,
+        employee_id: absensi.user_employee_id,
+        name: absensi.user_name,
+        grade_id: absensi.user_grade_id,
+        position_id: absensi.user_position_id,
+        signature_image: absensi.user_signature_image,
+        role_id: absensi.user_role_id,
+      },
+    };
+  }
+
+  static async getAllAbsensis(): Promise<AbsensiResponseDto[]> {
+    const result = await AbsensiReadRepository.getAllAbsensis();
+    return result.map((item) => AbsensiService.mapAbsensi(item));
+  }
+
+  static async getAbsensiById(id: number): Promise<AbsensiResponseDto | null> {
+    const result = await AbsensiReadRepository.getAbsensiById(id);
+
+    if (!result) {
+      return null;
+    }
+
+    return AbsensiService.mapAbsensi(result);
+  }
+
+  static async getAbsensisByUserId(
+    userId: number,
+  ): Promise<AbsensiResponseDto[]> {
+    const result = await AbsensiReadRepository.getAbsensisByUserId(userId);
+    return result.map((item) => AbsensiService.mapAbsensi(item));
+  }
+
+  static async createAbsensi(payload: CreateAbsensiRequestDto) {
+    return AbsensiWriteRepository.createAbsensi(payload);
+  }
+
+  static async updateAbsensi(id: number, payload: UpdateAbsensiRequestDto) {
+    const absensi = await AbsensiReadRepository.getAbsensiById(id);
+
+    if (!absensi) {
+      return null;
+    }
+
+    const result = await AbsensiWriteRepository.updateAbsensi(id, payload);
+    return { absensi, result };
+  }
+
+  static async deleteAbsensi(id: number) {
+    const absensi = await AbsensiReadRepository.getAbsensiById(id);
+
+    if (!absensi) {
+      return null;
+    }
+
+    const result = await AbsensiWriteRepository.deleteAbsensi(id);
+    return { absensi, result };
+  }
+}
