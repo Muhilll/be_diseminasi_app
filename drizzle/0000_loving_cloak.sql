@@ -1,6 +1,7 @@
 CREATE TABLE `absensis` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`gambar` varchar(255),
+	`gambar_public_id` varchar(255) NOT NULL,
 	`des` text,
 	`user_id` int NOT NULL,
 	`created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -33,6 +34,7 @@ CREATE TABLE `disseminations_details` (
 	`participants` varchar(255),
 	`result` text,
 	`image` varchar(255),
+	`image_public_id` varchar(255) NOT NULL,
 	`created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	`updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	CONSTRAINT `disseminations_details_id` PRIMARY KEY(`id`)
