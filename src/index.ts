@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
-import { loggerMiddleware, appTokenMiddleware } from './middleware/appToken';
+import { loggerMiddleware } from './middleware/appToken';
 import userRoutes from './app/user/route/user.route';
 import roleRoutes from './app/role/route/role.route';
 import menuRoutes from './app/menu/route/menu.route';

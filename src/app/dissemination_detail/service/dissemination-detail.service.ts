@@ -5,6 +5,10 @@ import {
 import { DisseminationDetailResponseDto } from "../dto/dissemination-detail-response.dto";
 import { DisseminationDetailReadRepository } from "../repository/dissemination-detail-read.repository";
 import { DisseminationDetailWriteRepository } from "../repository/dissemination-detail-write.repository";
+import {
+  deleteImageFromCloudinary,
+  uploadImageToCloudinary,
+} from "../../../utils/cloudinary";
 
 export class DisseminationDetailService {
   static async getAllDisseminationDetails(): Promise<
@@ -30,8 +34,22 @@ export class DisseminationDetailService {
   static async createDisseminationDetail(
     payload: CreateDisseminationDetailRequestDto,
   ) {
-    return DisseminationDetailWriteRepository.createDisseminationDetail(payload);
-  }
+    const uploadedImage = await uploadImageToCloudinary(
+      payload.image,
+      "disseminations",
+      "dissemination_details",
+    );
+
+    return DisseminationDetailWriteRepository.createDisseminationDetail({
+      ...payload,
+      ...(uploadedImage !== undefined
+        ? {
+            image: uploadedImage.secure_url,
+            image_public_id: uploadedImage.public_id || null,
+          }
+        : {}),
+    });
+  } 
 
   static async updateDisseminationDetail(
     id: number,
@@ -44,10 +62,32 @@ export class DisseminationDetailService {
       return null;
     }
 
-    const result = await DisseminationDetailWriteRepository.updateDisseminationDetail(
-      id,
-      payload,
-    );
+    const uploadedImage =
+      payload.image !== undefined
+        ? await uploadImageToCloudinary(
+            payload.image,
+            "disseminations",
+            "dissemination_details",
+          )
+        : undefined;
+
+    if (payload.image !== undefined && detail.image_public_id) {
+      await deleteImageFromCloudinary(
+        detail.image_public_id,
+        "dissemination_details",
+      );
+    }
+
+    const result =
+      await DisseminationDetailWriteRepository.updateDisseminationDetail(id, {
+        ...payload,
+        ...(uploadedImage !== undefined
+          ? {
+              image: uploadedImage.secure_url,
+              image_public_id: uploadedImage.public_id || null,
+            }
+          : {}),
+      });
 
     return { detail, result };
   }
@@ -59,6 +99,11 @@ export class DisseminationDetailService {
     if (!detail) {
       return null;
     }
+
+    await deleteImageFromCloudinary(
+      detail.image_public_id,
+      "dissemination_details",
+    );
 
     const result = await DisseminationDetailWriteRepository.deleteDisseminationDetail(
       id,

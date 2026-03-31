@@ -10,6 +10,10 @@ type ParsedDisseminationId =
   | { success: false; error: string };
 
 export class DisseminationDetailController {
+  private static isMultipartRequest(contentType: string | undefined) {
+    return contentType?.includes("multipart/form-data") ?? false;
+  }
+
   private static parseDateValue(value: unknown) {
     if (value === undefined || value === null || value === "") {
       return undefined;
@@ -70,6 +74,32 @@ export class DisseminationDetailController {
     return {
       success: true,
       disseminationId,
+    };
+  }
+
+  private static async parseRequestBody(c: Context) {
+    const contentType = c.req.header("content-type");
+
+    if (!DisseminationDetailController.isMultipartRequest(contentType)) {
+      return await c.req.json();
+    }
+
+    const formData = await c.req.formData();
+    const image = formData.get("image");
+    const date = formData.get("date");
+
+    return {
+      disseminations_id: formData.get("disseminations_id")
+        ? Number(formData.get("disseminations_id"))
+        : undefined,
+      basis: (formData.get("basis") as string | null) ?? undefined,
+      material: (formData.get("material") as string | null) ?? undefined,
+      date: typeof date === "string" ? date : undefined,
+      location: (formData.get("location") as string | null) ?? undefined,
+      methode: (formData.get("methode") as string | null) ?? undefined,
+      participants: (formData.get("participants") as string | null) ?? undefined,
+      result: (formData.get("result") as string | null) ?? undefined,
+      image: image instanceof File && image.size > 0 ? image : undefined,
     };
   }
 
@@ -172,7 +202,7 @@ export class DisseminationDetailController {
 
   static async create(c: Context) {
     try {
-      const body = await c.req.json();
+      const body = await DisseminationDetailController.parseRequestBody(c);
       const parsedDate = DisseminationDetailController.parseDateValue(body.date);
 
       if (!body.disseminations_id) {
@@ -222,7 +252,7 @@ export class DisseminationDetailController {
         return c.json({ success: false, message: parsedId.error }, 400);
       }
 
-      const body = await c.req.json();
+      const body = await DisseminationDetailController.parseRequestBody(c);
       const parsedDate =
         body.date !== undefined
           ? DisseminationDetailController.parseDateValue(body.date)

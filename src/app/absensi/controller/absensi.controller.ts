@@ -14,6 +14,10 @@ type ParsedUserId =
   | { success: false; error: string };
 
 export class AbsensiController {
+  private static isMultipartRequest(contentType: string | undefined) {
+    return contentType?.includes("multipart/form-data") ?? false;
+  }
+
   private static parseAbsensiIdParam(
     idParam: string | undefined,
   ): ParsedAbsensiId {
@@ -59,6 +63,25 @@ export class AbsensiController {
     return {
       success: true,
       userId,
+    };
+  }
+
+  private static async parseRequestBody(c: Context) {
+    const contentType = c.req.header("content-type");
+
+    if (!AbsensiController.isMultipartRequest(contentType)) {
+      return await c.req.json();
+    }
+
+    const formData = await c.req.formData();
+    const gambar = formData.get("gambar");
+
+    return {
+      gambar: gambar instanceof File && gambar.size > 0 ? gambar : undefined,
+      des: (formData.get("des") as string | null) ?? undefined,
+      user_id: formData.get("user_id")
+        ? Number(formData.get("user_id"))
+        : undefined,
     };
   }
 
@@ -147,7 +170,9 @@ export class AbsensiController {
 
   static async create(c: Context) {
     try {
-      const body: CreateAbsensiRequestDto = await c.req.json();
+      const body = (await AbsensiController.parseRequestBody(
+        c,
+      )) as CreateAbsensiRequestDto;
 
       if (!body.user_id) {
         return c.json(
@@ -189,7 +214,9 @@ export class AbsensiController {
         return c.json({ success: false, message: parsedId.error }, 400);
       }
 
-      const body: UpdateAbsensiRequestDto = await c.req.json();
+      const body = (await AbsensiController.parseRequestBody(
+        c,
+      )) as UpdateAbsensiRequestDto;
       const updateResult = await AbsensiService.updateAbsensi(parsedId.id, body);
 
       if (!updateResult) {

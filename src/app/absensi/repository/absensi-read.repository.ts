@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { absensis, db, users } from "../../../db";
 import { AbsensiWithRelationsRow } from "../contract/absensi.contract";
 
@@ -9,6 +9,7 @@ export class AbsensiReadRepository {
         .select({
           id: absensis.id,
           gambar: absensis.gambar,
+          gambar_public_id: absensis.gambar_public_id,
           des: absensis.des,
           user_id: absensis.user_id,
           created_at: absensis.created_at,
@@ -23,7 +24,8 @@ export class AbsensiReadRepository {
           user_role_id: users.role_id,
         })
         .from(absensis)
-        .innerJoin(users, eq(absensis.user_id, users.id));
+        .innerJoin(users, eq(absensis.user_id, users.id))
+        .orderBy(desc(absensis.created_at));
     } catch (error) {
       throw new Error(`Failed to fetch absensis: ${error}`);
     }
@@ -35,6 +37,7 @@ export class AbsensiReadRepository {
         .select({
           id: absensis.id,
           gambar: absensis.gambar,
+          gambar_public_id: absensis.gambar_public_id,
           des: absensis.des,
           user_id: absensis.user_id,
           created_at: absensis.created_at,
@@ -65,6 +68,7 @@ export class AbsensiReadRepository {
         .select({
           id: absensis.id,
           gambar: absensis.gambar,
+          gambar_public_id: absensis.gambar_public_id,
           des: absensis.des,
           user_id: absensis.user_id,
           created_at: absensis.created_at,
@@ -80,7 +84,8 @@ export class AbsensiReadRepository {
         })
         .from(absensis)
         .innerJoin(users, eq(absensis.user_id, users.id))
-        .where(eq(absensis.user_id, userId));
+        .where(eq(absensis.user_id, userId))
+        .orderBy(desc(absensis.created_at));
     } catch (error) {
       throw new Error(`Failed to fetch absensis: ${error}`);
     }

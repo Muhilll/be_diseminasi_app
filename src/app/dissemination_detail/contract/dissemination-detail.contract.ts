@@ -9,6 +9,7 @@ export type DisseminationDetailEntity = {
   participants: string | null;
   result: string | null;
   image: string | null;
+  image_public_id: string | null;
   created_at: Date;
   updated_at: Date;
 };

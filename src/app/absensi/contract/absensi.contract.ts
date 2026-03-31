@@ -1,6 +1,7 @@
 export type AbsensiEntity = {
   id: number;
   gambar: string | null;
+  gambar_public_id: string | null;
   des: string | null;
   user_id: number;
   created_at: Date;
@@ -10,6 +11,7 @@ export type AbsensiEntity = {
 export type AbsensiWithRelationsRow = {
   id: number;
   gambar: string | null;
+  gambar_public_id: string | null;
   des: string | null;
   user_id: number;
   created_at: Date;

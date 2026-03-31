@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "../../../db";
 import { menus, role_permissions, roles } from "../../../db/schema";
 import { RolePermissionWithRelationsRow } from "../contract/role-permission.contract";
@@ -99,6 +99,50 @@ export class RolePermissionReadRepository {
         .where(eq(role_permissions.role_id, roleId));
     } catch (error) {
       throw new Error(`Failed to fetch role permissions: ${error}`);
+    }
+  }
+
+  static async getPermissionByRoleIdAndMenuKey(roleId: number, menuKey: string) {
+    try {
+      const result = await db
+        .select({
+          can_read: role_permissions.can_read,
+          can_create: role_permissions.can_create,
+          can_update: role_permissions.can_update,
+          can_delete: role_permissions.can_delete,
+          can_report: role_permissions.can_report,
+        })
+        .from(role_permissions)
+        .innerJoin(menus, eq(role_permissions.menu_id, menus.id))
+        .where(
+          and(
+            eq(role_permissions.role_id, roleId),
+            eq(menus.path, menuKey),
+          ),
+        );
+
+      if (result.length === 0) {
+        return null;
+      }
+
+      return result.reduce(
+        (acc, item) => ({
+          can_read: acc.can_read || Boolean(item.can_read),
+          can_create: acc.can_create || Boolean(item.can_create),
+          can_update: acc.can_update || Boolean(item.can_update),
+          can_delete: acc.can_delete || Boolean(item.can_delete),
+          can_report: acc.can_report || Boolean(item.can_report),
+        }),
+        {
+          can_read: false,
+          can_create: false,
+          can_update: false,
+          can_delete: false,
+          can_report: false,
+        },
+      );
+    } catch (error) {
+      throw new Error(`Failed to fetch role permission: ${error}`);
     }
   }
 }

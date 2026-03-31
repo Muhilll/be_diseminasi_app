@@ -1,8 +1,8 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "4ebc6fee-bc25-4dd6-932a-b717d95e9afb",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "344abe87-48b7-49e1-83ec-08724a46a080",
+  "prevId": "4ebc6fee-bc25-4dd6-932a-b717d95e9afb",
   "tables": {
     "absensis": {
       "name": "absensis",
@@ -16,6 +16,13 @@
         },
         "gambar": {
           "name": "gambar",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "gambar_public_id": {
+          "name": "gambar_public_id",
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false,
@@ -250,6 +257,13 @@
         },
         "image": {
           "name": "image",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "image_public_id": {
+          "name": "image_public_id",
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false,

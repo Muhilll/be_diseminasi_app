@@ -6,12 +6,17 @@ import {
 import { AbsensiResponseDto } from "../dto/absensi-response.dto";
 import { AbsensiReadRepository } from "../repository/absensi-read.repository";
 import { AbsensiWriteRepository } from "../repository/absensi-write.repository";
+import {
+  deleteImageFromCloudinary,
+  uploadImageToCloudinary,
+} from "../../../utils/cloudinary";
 
 export class AbsensiService {
   private static mapAbsensi(absensi: AbsensiWithRelationsRow): AbsensiResponseDto {
     return {
       id: absensi.id,
       gambar: absensi.gambar,
+      gambar_public_id: absensi.gambar_public_id,
       des: absensi.des,
       user_id: absensi.user_id,
       created_at: absensi.created_at,
@@ -52,7 +57,21 @@ export class AbsensiService {
   }
 
   static async createAbsensi(payload: CreateAbsensiRequestDto) {
-    return AbsensiWriteRepository.createAbsensi(payload);
+    const uploadedImage = await uploadImageToCloudinary(
+      payload.gambar,
+      "absensi",
+      "absensi",
+    );
+
+    return AbsensiWriteRepository.createAbsensi({
+      ...payload,
+      ...(uploadedImage !== undefined
+        ? {
+            gambar: uploadedImage.secure_url,
+            gambar_public_id: uploadedImage.public_id || null,
+          }
+        : {}),
+    });
   }
 
   static async updateAbsensi(id: number, payload: UpdateAbsensiRequestDto) {
@@ -62,9 +81,31 @@ export class AbsensiService {
       return null;
     }
 
-    const result = await AbsensiWriteRepository.updateAbsensi(id, payload);
+    const uploadedImage =
+      payload.gambar !== undefined
+        ? await uploadImageToCloudinary(
+            payload.gambar,
+            "absensi",
+            "absensi",
+          )
+        : undefined;
+
+    if (payload.gambar !== undefined && absensi.gambar_public_id) {
+      await deleteImageFromCloudinary(absensi.gambar_public_id, "absensi");
+    }
+
+    const result = await AbsensiWriteRepository.updateAbsensi(id, {
+      ...payload,
+      ...(uploadedImage !== undefined
+        ? {
+            gambar: uploadedImage.secure_url,
+            gambar_public_id: uploadedImage.public_id || null,
+          }
+        : {}),
+    });
     return { absensi, result };
   }
+
 
   static async deleteAbsensi(id: number) {
     const absensi = await AbsensiReadRepository.getAbsensiById(id);
@@ -72,6 +113,8 @@ export class AbsensiService {
     if (!absensi) {
       return null;
     }
+
+    await deleteImageFromCloudinary(absensi.gambar_public_id, "absensi");
 
     const result = await AbsensiWriteRepository.deleteAbsensi(id);
     return { absensi, result };

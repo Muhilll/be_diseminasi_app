@@ -96,6 +96,7 @@ export const absensis = mysqlTable(
   {
     id: int().primaryKey().autoincrement(),
     gambar: varchar({ length: 255 }),
+    gambar_public_id: varchar({ length: 255 }).notNull(),
     des: text(),
     user_id: int().notNull(),
     created_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
@@ -173,6 +174,7 @@ export const disseminations_details = mysqlTable(
     participants: varchar({ length: 255 }),
     result: text(),
     image: varchar({ length: 255 }),
+    image_public_id: varchar({ length: 255 }).notNull(),
     created_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
 updated_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
   },
