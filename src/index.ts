@@ -72,7 +72,4 @@ app.onError((err, c) => {
   }, 500);
 });
 
-export default {
-  port: 4000,
-  fetch: app.fetch,
-} 
+export default app;

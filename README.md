@@ -21,7 +21,7 @@ Project ini menyediakan API untuk:
 - absensis
 
 ## Prasyarat
-
+"start": "bun src/index.ts",
 Sebelum menjalankan project, pastikan sudah ada:
 
 - Bun
