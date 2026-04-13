@@ -110,7 +110,7 @@ export class AbsensiController {
     try {
       const parsedId = AbsensiController.parseAbsensiIdParam(c.req.param("id"));
 
-      if (!parsedId.success) {
+      if (parsedId.success === false) {
         return c.json({ success: false, message: parsedId.error }, 400);
       }
 
@@ -143,7 +143,7 @@ export class AbsensiController {
         c.req.param("userId"),
       );
 
-      if (!parsedUserId.success) {
+      if (parsedUserId.success === false) {
         return c.json({ success: false, message: parsedUserId.error }, 400);
       }
 
@@ -210,7 +210,7 @@ export class AbsensiController {
     try {
       const parsedId = AbsensiController.parseAbsensiIdParam(c.req.param("id"));
 
-      if (!parsedId.success) {
+      if (parsedId.success === false) {
         return c.json({ success: false, message: parsedId.error }, 400);
       }
 
@@ -244,7 +244,7 @@ export class AbsensiController {
     try {
       const parsedId = AbsensiController.parseAbsensiIdParam(c.req.param("id"));
 
-      if (!parsedId.success) {
+      if (parsedId.success === false) {
         return c.json({ success: false, message: parsedId.error }, 400);
       }
 

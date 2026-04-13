@@ -91,7 +91,7 @@ export class RolePermissionController {
         c.req.param("id"),
       );
 
-      if (!parsedId.success) {
+      if (parsedId.success === false) {
         return c.json({ success: false, message: parsedId.error }, 400);
       }
 
@@ -129,7 +129,7 @@ export class RolePermissionController {
         c.req.param("roleId"),
       );
 
-      if (!parsedRoleId.success) {
+      if (parsedRoleId.success === false) {
         return c.json({ success: false, message: parsedRoleId.error }, 400);
       }
 
@@ -196,7 +196,7 @@ export class RolePermissionController {
         c.req.param("id"),
       );
 
-      if (!parsedId.success) {
+      if (parsedId.success === false) {
         return c.json({ success: false, message: parsedId.error }, 400);
       }
 
@@ -236,7 +236,7 @@ export class RolePermissionController {
         c.req.param("id"),
       );
 
-      if (!parsedId.success) {
+      if (parsedId.success === false) {
         return c.json({ success: false, message: parsedId.error }, 400);
       }
 
