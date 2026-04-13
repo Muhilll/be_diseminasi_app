@@ -132,7 +132,7 @@ export class DisseminationDetailController {
           c.req.param("id"),
         );
 
-      if (!parsedId.success) {
+      if (parsedId.success === false) {
         return c.json({ success: false, message: parsedId.error }, 400);
       }
 
@@ -171,7 +171,7 @@ export class DisseminationDetailController {
           c.req.param("disseminationId"),
         );
 
-      if (!parsedDisseminationId.success) {
+      if (parsedDisseminationId.success === false) {
         return c.json(
           { success: false, message: parsedDisseminationId.error },
           400,
@@ -248,7 +248,7 @@ export class DisseminationDetailController {
           c.req.param("id"),
         );
 
-      if (!parsedId.success) {
+      if (parsedId.success === false) {
         return c.json({ success: false, message: parsedId.error }, 400);
       }
 
@@ -305,7 +305,7 @@ export class DisseminationDetailController {
           c.req.param("id"),
         );
 
-      if (!parsedId.success) {
+      if (parsedId.success === false) {
         return c.json({ success: false, message: parsedId.error }, 400);
       }
 
