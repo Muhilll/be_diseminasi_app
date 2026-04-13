@@ -11,6 +11,7 @@ import rolePermissionRoutes from './app/role_permission/route/role-permission.ro
 import disseminationRoutes from './app/dissemination/route/dissemination.route';
 import disseminationDetailRoutes from './app/dissemination_detail/route/dissemination-detail.route';
 import absensiRoutes from './app/absensi/route/absensi.route';
+import { UserService } from './app/user/service/user.service';
 
 const app = new Hono();
 
@@ -39,6 +40,18 @@ app.get('/api/health', (c) => {
   return c.json({
     success: true,
     message: 'API is running',
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// Cek DB
+app.get('/api/health', async (c) => {
+  const users = await UserService.getAllUsers();
+
+  return c.json({
+    success: true,
+    message: 'API is running',
+    data: users,
     timestamp: new Date().toISOString(),
   });
 });
