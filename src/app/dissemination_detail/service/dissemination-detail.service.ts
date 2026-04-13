@@ -42,10 +42,11 @@ export class DisseminationDetailService {
 
     return DisseminationDetailWriteRepository.createDisseminationDetail({
       ...payload,
+      image_public_id: "",
       ...(uploadedImage !== undefined
         ? {
             image: uploadedImage.secure_url,
-            image_public_id: uploadedImage.public_id || null,
+            image_public_id: uploadedImage.public_id,
           }
         : {}),
     });
@@ -84,7 +85,7 @@ export class DisseminationDetailService {
         ...(uploadedImage !== undefined
           ? {
               image: uploadedImage.secure_url,
-              image_public_id: uploadedImage.public_id || null,
+              image_public_id: uploadedImage.public_id,
             }
           : {}),
       });

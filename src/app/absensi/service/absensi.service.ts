@@ -65,10 +65,11 @@ export class AbsensiService {
 
     return AbsensiWriteRepository.createAbsensi({
       ...payload,
+      gambar_public_id: "",
       ...(uploadedImage !== undefined
         ? {
             gambar: uploadedImage.secure_url,
-            gambar_public_id: uploadedImage.public_id || null,
+            gambar_public_id: uploadedImage.public_id,
           }
         : {}),
     });
@@ -99,7 +100,7 @@ export class AbsensiService {
       ...(uploadedImage !== undefined
         ? {
             gambar: uploadedImage.secure_url,
-            gambar_public_id: uploadedImage.public_id || null,
+            gambar_public_id: uploadedImage.public_id,
           }
         : {}),
     });
