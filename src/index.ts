@@ -46,6 +46,7 @@ app.get('/api/health', (c) => {
 
 // Cek DB
 app.get('/api/cek-db', async (c) => {
+  console.log(process.env.DATABASE_URL);
   const users = await UserService.getAllUsers();
 
   return c.json({
