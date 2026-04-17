@@ -95,6 +95,10 @@ export async function uploadImageToCloudinary(
   configureCloudinary(target);
 
   if (file instanceof File) {
+    console.log(
+      `[Cloudinary] Upload start target=${target} folder=${folder} name=${file.name} type=${file.type} size=${file.size}`,
+    );
+
     if (file.type && !isSupportedImageMimeType(file.type)) {
       throw new Error(
         `Unsupported image type "${file.type}". Allowed types: jpg, jpeg, png, webp.`,
@@ -104,7 +108,13 @@ export async function uploadImageToCloudinary(
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    return await uploadBufferToCloudinary(buffer, folder);
+    const result = await uploadBufferToCloudinary(buffer, folder);
+
+    console.log(
+      `[Cloudinary] Upload success target=${target} public_id=${result.public_id}`,
+    );
+
+    return result;
   }
 
   if (isRemoteUrl(file)) {
