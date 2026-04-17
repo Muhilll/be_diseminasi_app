@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
 import { loggerMiddleware } from './middleware/appToken';
+import { originGuard } from './middleware/originGuard';
 import userRoutes from './app/user/route/user.route';
 import roleRoutes from './app/role/route/role.route';
 import menuRoutes from './app/menu/route/menu.route';
@@ -12,17 +13,35 @@ import disseminationRoutes from './app/dissemination/route/dissemination.route';
 import disseminationDetailRoutes from './app/dissemination_detail/route/dissemination-detail.route';
 import absensiRoutes from './app/absensi/route/absensi.route';
 import uploadRoutes from './app/upload/route/upload.route';
-import { UserService } from './app/user/service/user.service';
 
 const app = new Hono();
+const normalizeOrigin = (origin: string) => origin.trim().replace(/\/+$/, '');
+const allowedOrigins = (process.env.ALLOWED_APP_URL ?? "")
+  .split(",")
+  .map((origin) => normalizeOrigin(origin))
+  .filter(Boolean);
 
 // Global Middleware
 app.use(cors({
-  origin: '*',
+  origin: (origin) => {
+    if (!origin) {
+      return "";
+    }
+
+    const normalizedOrigin = normalizeOrigin(origin);
+
+    if (allowedOrigins.length === 0) {
+      return normalizedOrigin;
+    }
+
+    return allowedOrigins.includes(normalizedOrigin) ? normalizedOrigin : "";
+  },
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization', 'X-App-Token'],
   credentials: true,
 }));
+
+app.use('*', originGuard);
 app.use(logger());
 app.use(loggerMiddleware);
 
