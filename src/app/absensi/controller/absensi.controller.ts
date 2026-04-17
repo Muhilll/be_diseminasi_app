@@ -14,8 +14,19 @@ type ParsedUserId =
   | { success: false; error: string };
 
 export class AbsensiController {
-  private static isMultipartRequest(contentType: string | undefined) {
-    return contentType?.includes("multipart/form-data") ?? false;
+  private static validateImagePayload(
+    imageUrl: string | undefined,
+    imagePublicId: string | undefined,
+  ) {
+    if (!imageUrl && !imagePublicId) {
+      return null;
+    }
+
+    if (!imageUrl || !imagePublicId) {
+      return "gambar and gambar_public_id must be provided together";
+    }
+
+    return null;
   }
 
   private static parseAbsensiIdParam(
@@ -67,22 +78,7 @@ export class AbsensiController {
   }
 
   private static async parseRequestBody(c: Context) {
-    const contentType = c.req.header("content-type");
-
-    if (!AbsensiController.isMultipartRequest(contentType)) {
-      return await c.req.json();
-    }
-
-    const formData = await c.req.formData();
-    const gambar = formData.get("gambar");
-
-    return {
-      gambar: gambar instanceof File && gambar.size > 0 ? gambar : undefined,
-      des: (formData.get("des") as string | null) ?? undefined,
-      user_id: formData.get("user_id")
-        ? Number(formData.get("user_id"))
-        : undefined,
-    };
+    return await c.req.json();
   }
 
   static async getAll(c: Context) {
@@ -184,6 +180,21 @@ export class AbsensiController {
         );
       }
 
+      const imageValidationError = AbsensiController.validateImagePayload(
+        body.gambar,
+        body.gambar_public_id,
+      );
+
+      if (imageValidationError) {
+        return c.json(
+          {
+            success: false,
+            message: imageValidationError,
+          },
+          400,
+        );
+      }
+
       const result = await AbsensiService.createAbsensi(body);
 
       return c.json(
@@ -217,6 +228,21 @@ export class AbsensiController {
       const body = (await AbsensiController.parseRequestBody(
         c,
       )) as UpdateAbsensiRequestDto;
+      const imageValidationError = AbsensiController.validateImagePayload(
+        body.gambar,
+        body.gambar_public_id,
+      );
+
+      if (imageValidationError) {
+        return c.json(
+          {
+            success: false,
+            message: imageValidationError,
+          },
+          400,
+        );
+      }
+
       const updateResult = await AbsensiService.updateAbsensi(parsedId.id, body);
 
       if (!updateResult) {

@@ -5,10 +5,7 @@ import {
 import { DisseminationDetailResponseDto } from "../dto/dissemination-detail-response.dto";
 import { DisseminationDetailReadRepository } from "../repository/dissemination-detail-read.repository";
 import { DisseminationDetailWriteRepository } from "../repository/dissemination-detail-write.repository";
-import {
-  deleteImageFromCloudinary,
-  uploadImageToCloudinary,
-} from "../../../utils/cloudinary";
+import { deleteImageFromCloudinary } from "../../../utils/cloudinary";
 
 export class DisseminationDetailService {
   static async getAllDisseminationDetails(): Promise<
@@ -34,23 +31,8 @@ export class DisseminationDetailService {
   static async createDisseminationDetail(
     payload: CreateDisseminationDetailRequestDto,
   ) {
-    const uploadedImage = await uploadImageToCloudinary(
-      payload.image,
-      "disseminations",
-      "dissemination_details",
-    );
-
-    return DisseminationDetailWriteRepository.createDisseminationDetail({
-      ...payload,
-      image_public_id: "",
-      ...(uploadedImage !== undefined
-        ? {
-            image: uploadedImage.secure_url,
-            image_public_id: uploadedImage.public_id,
-          }
-        : {}),
-    });
-  } 
+    return DisseminationDetailWriteRepository.createDisseminationDetail(payload);
+  }
 
   static async updateDisseminationDetail(
     id: number,
@@ -63,15 +45,6 @@ export class DisseminationDetailService {
       return null;
     }
 
-    const uploadedImage =
-      payload.image !== undefined
-        ? await uploadImageToCloudinary(
-            payload.image,
-            "disseminations",
-            "dissemination_details",
-          )
-        : undefined;
-
     if (payload.image !== undefined && detail.image_public_id) {
       await deleteImageFromCloudinary(
         detail.image_public_id,
@@ -79,16 +52,10 @@ export class DisseminationDetailService {
       );
     }
 
-    const result =
-      await DisseminationDetailWriteRepository.updateDisseminationDetail(id, {
-        ...payload,
-        ...(uploadedImage !== undefined
-          ? {
-              image: uploadedImage.secure_url,
-              image_public_id: uploadedImage.public_id,
-            }
-          : {}),
-      });
+    const result = await DisseminationDetailWriteRepository.updateDisseminationDetail(
+      id,
+      payload,
+    );
 
     return { detail, result };
   }

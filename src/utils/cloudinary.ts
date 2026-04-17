@@ -1,6 +1,7 @@
 import { v2 as cloudinary } from "cloudinary";
 
 type CloudinaryTarget = "dissemination_details" | "absensi";
+type CloudinaryFolder = "disseminations" | "absensi";
 
 function getCloudinaryUrl(target: CloudinaryTarget) {
   if (target === "dissemination_details") {
@@ -38,45 +39,12 @@ function configureCloudinary(target: CloudinaryTarget) {
   cloudinary.config(parseCloudinaryUrl(cloudinaryUrl));
 }
 
-function isRemoteUrl(value: string) {
-  return /^https?:\/\//i.test(value);
-}
+function getCloudinaryFolder(target: CloudinaryTarget): CloudinaryFolder {
+  if (target === "dissemination_details") {
+    return "disseminations";
+  }
 
-function isSupportedImageMimeType(mimeType: string) {
-  return ["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(
-    mimeType.toLowerCase(),
-  );
-}
-
-async function uploadBufferToCloudinary(
-  buffer: Buffer,
-  folder: string,
-): Promise<CloudinaryUploadResult> {
-  return await new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      {
-        folder,
-        resource_type: "image",
-      },
-      (error, result) => {
-        if (error || !result) {
-          reject(
-            new Error(
-              `Cloudinary upload failed: ${error?.message ?? "Unknown error"}`,
-            ),
-          );
-          return;
-        }
-
-        resolve({
-          secure_url: result.secure_url,
-          public_id: result.public_id,
-        });
-      },
-    );
-
-    stream.end(buffer);
-  });
+  return "absensi";
 }
 
 export type CloudinaryUploadResult = {
@@ -84,54 +52,42 @@ export type CloudinaryUploadResult = {
   public_id: string;
 };
 
-export async function uploadImageToCloudinary(
-  file: string | File | undefined,
-  folder: string,
+export type CloudinarySignedUploadParams = {
+  apiKey: string;
+  cloudName: string;
+  folder: CloudinaryFolder;
+  signature: string;
+  timestamp: number;
+  uploadUrl: string;
+};
+
+export function createSignedUploadParams(
   target: CloudinaryTarget,
-): Promise<CloudinaryUploadResult | undefined> {
-  if (!file) {
-    return undefined;
-  }
-  configureCloudinary(target);
+): CloudinarySignedUploadParams {
+  const cloudinaryUrl = getCloudinaryUrl(target);
 
-  if (file instanceof File) {
-    console.log(
-      `[Cloudinary] Upload start target=${target} folder=${folder} name=${file.name} type=${file.type} size=${file.size}`,
-    );
-
-    if (file.type && !isSupportedImageMimeType(file.type)) {
-      throw new Error(
-        `Unsupported image type "${file.type}". Allowed types: jpg, jpeg, png, webp.`,
-      );
-    }
-
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    const result = await uploadBufferToCloudinary(buffer, folder);
-
-    console.log(
-      `[Cloudinary] Upload success target=${target} public_id=${result.public_id}`,
-    );
-
-    return result;
+  if (!cloudinaryUrl) {
+    throw new Error(`Cloudinary URL for ${target} is not configured`);
   }
 
-  if (isRemoteUrl(file)) {
-    return {
-      secure_url: file,
-      public_id: "",
-    };
-  }
-
-  const result = await cloudinary.uploader.upload(file, {
-    folder,
-    resource_type: "image",
-  });
+  const config = parseCloudinaryUrl(cloudinaryUrl);
+  const folder = getCloudinaryFolder(target);
+  const timestamp = Math.floor(Date.now() / 1000);
+  const signature = cloudinary.utils.api_sign_request(
+    {
+      folder,
+      timestamp,
+    },
+    config.api_secret,
+  );
 
   return {
-    secure_url: result.secure_url,
-    public_id: result.public_id,
+    apiKey: config.api_key,
+    cloudName: config.cloud_name,
+    folder,
+    signature,
+    timestamp,
+    uploadUrl: `https://api.cloudinary.com/v1_1/${config.cloud_name}/image/upload`,
   };
 }
 

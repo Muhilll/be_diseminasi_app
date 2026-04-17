@@ -10,8 +10,19 @@ type ParsedDisseminationId =
   | { success: false; error: string };
 
 export class DisseminationDetailController {
-  private static isMultipartRequest(contentType: string | undefined) {
-    return contentType?.includes("multipart/form-data") ?? false;
+  private static validateImagePayload(
+    imageUrl: string | undefined,
+    imagePublicId: string | undefined,
+  ) {
+    if (!imageUrl && !imagePublicId) {
+      return null;
+    }
+
+    if (!imageUrl || !imagePublicId) {
+      return "image and image_public_id must be provided together";
+    }
+
+    return null;
   }
 
   private static parseDateValue(value: unknown) {
@@ -78,29 +89,7 @@ export class DisseminationDetailController {
   }
 
   private static async parseRequestBody(c: Context) {
-    const contentType = c.req.header("content-type");
-
-    if (!DisseminationDetailController.isMultipartRequest(contentType)) {
-      return await c.req.json();
-    }
-
-    const formData = await c.req.formData();
-    const image = formData.get("image");
-    const date = formData.get("date");
-
-    return {
-      disseminations_id: formData.get("disseminations_id")
-        ? Number(formData.get("disseminations_id"))
-        : undefined,
-      basis: (formData.get("basis") as string | null) ?? undefined,
-      material: (formData.get("material") as string | null) ?? undefined,
-      date: typeof date === "string" ? date : undefined,
-      location: (formData.get("location") as string | null) ?? undefined,
-      methode: (formData.get("methode") as string | null) ?? undefined,
-      participants: (formData.get("participants") as string | null) ?? undefined,
-      result: (formData.get("result") as string | null) ?? undefined,
-      image: image instanceof File && image.size > 0 ? image : undefined,
-    };
+    return await c.req.json();
   }
 
   static async getAll(c: Context) {
@@ -215,6 +204,22 @@ export class DisseminationDetailController {
         );
       }
 
+      const imageValidationError =
+        DisseminationDetailController.validateImagePayload(
+          body.image,
+          body.image_public_id,
+        );
+
+      if (imageValidationError) {
+        return c.json(
+          {
+            success: false,
+            message: imageValidationError,
+          },
+          400,
+        );
+      }
+
       const result =
         await DisseminationDetailService.createDisseminationDetail({
           ...body,
@@ -263,6 +268,22 @@ export class DisseminationDetailController {
           {
             success: false,
             message: "Invalid date format",
+          },
+          400,
+        );
+      }
+
+      const imageValidationError =
+        DisseminationDetailController.validateImagePayload(
+          body.image,
+          body.image_public_id,
+        );
+
+      if (imageValidationError) {
+        return c.json(
+          {
+            success: false,
+            message: imageValidationError,
           },
           400,
         );

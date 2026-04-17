@@ -7,8 +7,8 @@ export type CreateDisseminationDetailRequestDto = {
   methode?: string;
   participants?: string;
   result?: string;
-  image?: string | File;
-  image_public_id?: string | null;
+  image?: string;
+  image_public_id?: string;
 };
 
 export type UpdateDisseminationDetailRequestDto = Partial<{
@@ -20,6 +20,6 @@ export type UpdateDisseminationDetailRequestDto = Partial<{
   methode: string;
   participants: string;
   result: string;
-  image: string | File;
-  image_public_id: string | null;
+  image: string;
+  image_public_id: string;
 }>;
