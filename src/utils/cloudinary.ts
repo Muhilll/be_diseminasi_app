@@ -42,10 +42,41 @@ function isRemoteUrl(value: string) {
   return /^https?:\/\//i.test(value);
 }
 
-async function fileToDataUri(file: File) {
-  const arrayBuffer = await file.arrayBuffer();
-  const base64 = Buffer.from(arrayBuffer).toString("base64");
-  return `data:${file.type || "application/octet-stream"};base64,${base64}`;
+function isSupportedImageMimeType(mimeType: string) {
+  return ["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(
+    mimeType.toLowerCase(),
+  );
+}
+
+async function uploadBufferToCloudinary(
+  buffer: Buffer,
+  folder: string,
+): Promise<CloudinaryUploadResult> {
+  return await new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+        resource_type: "image",
+      },
+      (error, result) => {
+        if (error || !result) {
+          reject(
+            new Error(
+              `Cloudinary upload failed: ${error?.message ?? "Unknown error"}`,
+            ),
+          );
+          return;
+        }
+
+        resolve({
+          secure_url: result.secure_url,
+          public_id: result.public_id,
+        });
+      },
+    );
+
+    stream.end(buffer);
+  });
 }
 
 export type CloudinaryUploadResult = {
@@ -64,16 +95,16 @@ export async function uploadImageToCloudinary(
   configureCloudinary(target);
 
   if (file instanceof File) {
-    const dataUri = await fileToDataUri(file);
-    const result = await cloudinary.uploader.upload(dataUri, {
-      folder,
-      resource_type: "image",
-    });
+    if (file.type && !isSupportedImageMimeType(file.type)) {
+      throw new Error(
+        `Unsupported image type "${file.type}". Allowed types: jpg, jpeg, png, webp.`,
+      );
+    }
 
-    return {
-      secure_url: result.secure_url,
-      public_id: result.public_id,
-    };
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    return await uploadBufferToCloudinary(buffer, folder);
   }
 
   if (isRemoteUrl(file)) {
