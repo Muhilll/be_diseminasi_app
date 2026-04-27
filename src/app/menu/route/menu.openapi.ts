@@ -13,8 +13,6 @@ import {
 } from "../../../docs/openapi-common";
 import { menuSchema } from "../../../docs/openapi-schemas";
 
-const menuPermissionKey = "/web-management/menus";
-
 const menuIdParamsSchema = createNumericPathParamsSchema("id");
 
 const createMenuRequestSchema = z
@@ -23,7 +21,10 @@ const createMenuRequestSchema = z
       example: "Dissemination",
     }),
     path: z.string().min(1).openapi({
-      example: "/disseminations",
+      example: "/master-data/disseminations",
+    }),
+    permission_path: z.string().nullable().optional().openapi({
+      example: "/api/disseminations",
     }),
     icon: z.string().nullable().optional().openapi({
       example: "ph-chart-bar",
@@ -38,7 +39,10 @@ const updateMenuRequestSchema = z
       example: "Dissemination Detail",
     }),
     path: z.string().min(1).optional().openapi({
-      example: "/dissemination-details",
+      example: "/master-data/dissemination-details",
+    }),
+    permission_path: z.string().nullable().optional().openapi({
+      example: "/api/dissemination-details",
     }),
     icon: z.string().nullable().optional().openapi({
       example: "ph-list",
@@ -74,7 +78,7 @@ export const getAllMenusRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(menuPermissionKey, "can_read"),
+    requirePermission(),
   ] as const,
   responses: {
     200: jsonResponse(menuListResponseSchema, "Menus fetched successfully"),
@@ -93,7 +97,7 @@ export const getMenuByIdRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(menuPermissionKey, "can_read"),
+    requirePermission(),
   ] as const,
   request: {
     params: menuIdParamsSchema,
@@ -117,7 +121,7 @@ export const createMenuRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(menuPermissionKey, "can_create"),
+    requirePermission(),
   ] as const,
   request: {
     body: {
@@ -147,7 +151,7 @@ export const updateMenuRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(menuPermissionKey, "can_update"),
+    requirePermission(),
   ] as const,
   request: {
     params: menuIdParamsSchema,
@@ -179,7 +183,7 @@ export const deleteMenuRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(menuPermissionKey, "can_delete"),
+    requirePermission(),
   ] as const,
   request: {
     params: menuIdParamsSchema,

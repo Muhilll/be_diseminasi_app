@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "0c0cd19f-7016-4e91-bb5e-4b8cf7243552",
+  "id": "312eb681-ef9a-41d0-a6c1-61e5448a60ab",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "absensis": {
@@ -396,6 +396,13 @@
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false
+        },
+        "permission_path": {
+          "name": "permission_path",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "icon": {

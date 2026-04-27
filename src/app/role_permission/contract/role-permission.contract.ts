@@ -28,6 +28,7 @@ export type RolePermissionWithRelationsRow = {
   menu_ref_id: number;
   menu_name: string;
   menu_path: string;
+  menu_permission_path: string | null;
   menu_icon: string | null;
   menu_parent_id: number | null;
 };

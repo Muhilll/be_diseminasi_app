@@ -14,8 +14,6 @@ import {
 } from "../../../docs/openapi-common";
 import { disseminationDetailSchema } from "../../../docs/openapi-schemas";
 
-const permissionKey = "/dissemination-details";
-
 const detailIdParamsSchema = createNumericPathParamsSchema("id");
 const disseminationIdParamsSchema = createNumericPathParamsSchema("disseminationId");
 
@@ -73,7 +71,7 @@ export const getAllDisseminationDetailsRoute = createRoute({
   tags: ["Dissemination Details"],
   summary: "Get all dissemination details",
   security: protectedSecurity,
-  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission(permissionKey, "can_read")] as const,
+  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission()] as const,
   responses: {
     200: jsonResponse(listResponseSchema, "Dissemination details fetched successfully"),
     401: jsonResponse(apiErrorResponseSchema, "Unauthorized"),
@@ -88,7 +86,7 @@ export const getDisseminationDetailByIdRoute = createRoute({
   tags: ["Dissemination Details"],
   summary: "Get dissemination detail by id",
   security: protectedSecurity,
-  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission(permissionKey, "can_read")] as const,
+  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission()] as const,
   request: { params: detailIdParamsSchema },
   responses: {
     200: jsonResponse(detailResponseSchema, "Dissemination detail fetched successfully"),
@@ -106,7 +104,7 @@ export const getDisseminationDetailsByDisseminationIdRoute = createRoute({
   tags: ["Dissemination Details"],
   summary: "Get dissemination details by dissemination id",
   security: protectedSecurity,
-  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission(permissionKey, "can_read")] as const,
+  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission()] as const,
   request: { params: disseminationIdParamsSchema },
   responses: {
     200: jsonResponse(listResponseSchema, "Dissemination details fetched successfully"),
@@ -123,7 +121,7 @@ export const createDisseminationDetailRoute = createRoute({
   tags: ["Dissemination Details"],
   summary: "Create dissemination detail",
   security: protectedSecurity,
-  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission(permissionKey, "can_create")] as const,
+  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission()] as const,
   request: {
     body: {
       required: true,
@@ -145,7 +143,7 @@ export const updateDisseminationDetailRoute = createRoute({
   tags: ["Dissemination Details"],
   summary: "Update dissemination detail",
   security: protectedSecurity,
-  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission(permissionKey, "can_update")] as const,
+  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission()] as const,
   request: {
     params: detailIdParamsSchema,
     body: {
@@ -169,7 +167,7 @@ export const deleteDisseminationDetailRoute = createRoute({
   tags: ["Dissemination Details"],
   summary: "Delete dissemination detail",
   security: protectedSecurity,
-  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission(permissionKey, "can_delete")] as const,
+  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission()] as const,
   request: { params: detailIdParamsSchema },
   responses: {
     200: jsonResponse(mutationResponseSchema, "Dissemination detail deleted successfully"),

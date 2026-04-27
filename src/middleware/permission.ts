@@ -15,8 +15,34 @@ type AuthUser = {
   role_id: number;
 };
 
+const methodToPermissionAction: Record<string, PermissionAction> = {
+  GET: "can_read",
+  POST: "can_create",
+  PUT: "can_update",
+  PATCH: "can_update",
+  DELETE: "can_delete",
+};
+
+function resolvePermissionPath(requestPath: string): string | null {
+  const segments = requestPath.split("/").filter(Boolean);
+
+  if (segments.length === 0) {
+    return null;
+  }
+
+  if (segments[0] === "api") {
+    if (segments.length < 2) {
+      return null;
+    }
+
+    return `/${segments[0]}/${segments[1]}`;
+  }
+
+  return `/${segments[0]}`;
+}
+
 export const requirePermission =
-  (menuKey: string, action: PermissionAction) =>
+  (action?: PermissionAction) =>
   async (c: Context, next: Next) => {
     try {
       const user = c.get("user") as AuthUser | undefined;
@@ -31,13 +57,36 @@ export const requirePermission =
         );
       }
 
+      const resolvedAction = action ?? methodToPermissionAction[c.req.method];
+      const permissionPath = resolvePermissionPath(c.req.path);
+
+      if (!resolvedAction) {
+        return c.json(
+          {
+            success: false,
+            message: `Permission action not configured for method ${c.req.method}`,
+          },
+          500,
+        );
+      }
+
+      if (!permissionPath) {
+        return c.json(
+          {
+            success: false,
+            message: `Permission path could not be resolved from ${c.req.path}`,
+          },
+          500,
+        );
+      }
+
       const permission =
-        await RolePermissionReadRepository.getPermissionByRoleIdAndMenuKey(
+        await RolePermissionReadRepository.getPermissionByRoleIdAndPermissionPath(
           user.role_id,
-          menuKey,
+          permissionPath,
         );
 
-      if (!permission || !Boolean(permission[action])) {
+      if (!permission || !Boolean(permission[resolvedAction])) {
         return c.json(
           {
             success: false,

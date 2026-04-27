@@ -41,17 +41,48 @@ const roleSeedData = [
 ];
 
 const menuSeedData = [
-  { name: "Dashboard", path: "/dashboard", icon: null, parentName: null },
-  { name: "Master Data", path: "/master-data", icon: null, parentName: null },
-  { name: "Web Management", path: "/web-management", icon: null, parentName: null },
-  { name: "Grade", path: "/master-data/grades", icon: null, parentName: "Master Data" },
-  { name: "Position", path: "/master-data/positions", icon: null, parentName: "Master Data" },
-  { name: "Role", path: "/master-data/roles", icon: null, parentName: "Master Data" },
-  { name: "User", path: "/master-data/users", icon: null, parentName: "Master Data" },
-  { name: "Menu", path: "/web-management/menus", icon: null, parentName: "Web Management" },
+  { name: "Dashboard", path: "/dashboard", permissionPath: null, icon: null, parentName: null },
+  { name: "Master Data", path: "/master-data", permissionPath: null, icon: null, parentName: null },
+  { name: "Web Management", path: "/web-management", permissionPath: null, icon: null, parentName: null },
+  {
+    name: "Grade",
+    path: "/master-data/grades",
+    permissionPath: "/api/grades",
+    icon: null,
+    parentName: "Master Data",
+  },
+  {
+    name: "Position",
+    path: "/master-data/positions",
+    permissionPath: "/api/positions",
+    icon: null,
+    parentName: "Master Data",
+  },
+  {
+    name: "Role",
+    path: "/master-data/roles",
+    permissionPath: "/api/roles",
+    icon: null,
+    parentName: "Master Data",
+  },
+  {
+    name: "User",
+    path: "/master-data/users",
+    permissionPath: "/api/users",
+    icon: null,
+    parentName: "Master Data",
+  },
+  {
+    name: "Menu",
+    path: "/web-management/menus",
+    permissionPath: "/api/menus",
+    icon: null,
+    parentName: "Web Management",
+  },
   {
     name: "Role Permission",
     path: "/web-management/role-permissions",
+    permissionPath: "/api/role-permissions",
     icon: null,
     parentName: "Web Management",
   },
@@ -117,6 +148,7 @@ async function seed() {
         parentMenus.map((menu) => ({
           name: menu.name,
           path: menu.path,
+          permission_path: menu.permissionPath,
           icon: menu.icon,
           parent_id: null,
         })),
@@ -136,6 +168,7 @@ async function seed() {
         childMenus.map((menu) => ({
           name: menu.name,
           path: menu.path,
+          permission_path: menu.permissionPath,
           icon: menu.icon,
           parent_id: parentMenuIdByName.get(menu.parentName as string) ?? null,
         })),

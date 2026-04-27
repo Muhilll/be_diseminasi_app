@@ -54,6 +54,7 @@ CREATE TABLE `menus` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`name` varchar(100) NOT NULL,
 	`path` varchar(255) NOT NULL,
+	`permission_path` varchar(255),
 	`icon` varchar(255),
 	`parent_id` int,
 	`created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,

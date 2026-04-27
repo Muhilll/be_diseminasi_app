@@ -14,8 +14,6 @@ import {
 } from "../../../docs/openapi-common";
 import { absensiSchema } from "../../../docs/openapi-schemas";
 
-const permissionKey = "/absensis";
-
 const absensiIdParamsSchema = createNumericPathParamsSchema("id");
 const userIdParamsSchema = createNumericPathParamsSchema("userId");
 
@@ -61,7 +59,7 @@ export const getAllAbsensisRoute = createRoute({
   tags: ["Absensis"],
   summary: "Get all absensis",
   security: protectedSecurity,
-  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission(permissionKey, "can_read")] as const,
+  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission()] as const,
   responses: {
     200: jsonResponse(listResponseSchema, "Absensis fetched successfully"),
     401: jsonResponse(apiErrorResponseSchema, "Unauthorized"),
@@ -76,7 +74,7 @@ export const getAbsensiByIdRoute = createRoute({
   tags: ["Absensis"],
   summary: "Get absensi by id",
   security: protectedSecurity,
-  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission(permissionKey, "can_read")] as const,
+  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission()] as const,
   request: { params: absensiIdParamsSchema },
   responses: {
     200: jsonResponse(detailResponseSchema, "Absensi fetched successfully"),
@@ -94,7 +92,7 @@ export const getAbsensisByUserIdRoute = createRoute({
   tags: ["Absensis"],
   summary: "Get absensis by user id",
   security: protectedSecurity,
-  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission(permissionKey, "can_read")] as const,
+  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission()] as const,
   request: { params: userIdParamsSchema },
   responses: {
     200: jsonResponse(listResponseSchema, "Absensis fetched successfully"),
@@ -111,7 +109,7 @@ export const createAbsensiRoute = createRoute({
   tags: ["Absensis"],
   summary: "Create absensi",
   security: protectedSecurity,
-  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission(permissionKey, "can_create")] as const,
+  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission()] as const,
   request: {
     body: {
       required: true,
@@ -133,7 +131,7 @@ export const updateAbsensiRoute = createRoute({
   tags: ["Absensis"],
   summary: "Update absensi",
   security: protectedSecurity,
-  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission(permissionKey, "can_update")] as const,
+  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission()] as const,
   request: {
     params: absensiIdParamsSchema,
     body: {
@@ -157,7 +155,7 @@ export const deleteAbsensiRoute = createRoute({
   tags: ["Absensis"],
   summary: "Delete absensi",
   security: protectedSecurity,
-  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission(permissionKey, "can_delete")] as const,
+  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission()] as const,
   request: { params: absensiIdParamsSchema },
   responses: {
     200: jsonResponse(mutationResponseSchema, "Absensi deleted successfully"),

@@ -14,8 +14,6 @@ import {
 } from "../../../docs/openapi-common";
 import { rolePermissionSchema } from "../../../docs/openapi-schemas";
 
-const permissionKey = "/web-management/role-permissions";
-
 const rolePermissionIdParamsSchema = createNumericPathParamsSchema("id");
 const roleIdParamsSchema = createNumericPathParamsSchema("roleId");
 
@@ -70,7 +68,7 @@ export const getAllRolePermissionsRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(permissionKey, "can_read"),
+    requirePermission(),
   ] as const,
   responses: {
     200: jsonResponse(listResponseSchema, "Role permissions fetched successfully"),
@@ -89,7 +87,7 @@ export const getRolePermissionByIdRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(permissionKey, "can_read"),
+    requirePermission(),
   ] as const,
   request: { params: rolePermissionIdParamsSchema },
   responses: {
@@ -111,7 +109,7 @@ export const getRolePermissionsByRoleIdRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(permissionKey, "can_read"),
+    requirePermission(),
   ] as const,
   request: { params: roleIdParamsSchema },
   responses: {
@@ -132,7 +130,7 @@ export const createRolePermissionRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(permissionKey, "can_create"),
+    requirePermission(),
   ] as const,
   request: {
     body: {
@@ -158,7 +156,7 @@ export const updateRolePermissionRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(permissionKey, "can_update"),
+    requirePermission(),
   ] as const,
   request: {
     params: rolePermissionIdParamsSchema,
@@ -186,7 +184,7 @@ export const deleteRolePermissionRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(permissionKey, "can_delete"),
+    requirePermission(),
   ] as const,
   request: { params: rolePermissionIdParamsSchema },
   responses: {

@@ -17,8 +17,6 @@ import {
   userSchema,
 } from "../../../docs/openapi-schemas";
 
-const userPermissionKey = "/master-data/users";
-
 const userIdParamsSchema = createNumericPathParamsSchema("id");
 
 const loginRequestSchema = z
@@ -163,7 +161,7 @@ export const getAllUsersRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(userPermissionKey, "can_read"),
+    requirePermission(),
   ] as const,
   responses: {
     200: jsonResponse(userListResponseSchema, "Users fetched successfully"),
@@ -199,7 +197,7 @@ export const getUserByIdRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(userPermissionKey, "can_read"),
+    requirePermission(),
   ] as const,
   request: {
     params: userIdParamsSchema,
@@ -223,7 +221,7 @@ export const createUserRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(userPermissionKey, "can_create"),
+    requirePermission(),
   ] as const,
   request: {
     body: {
@@ -256,7 +254,7 @@ export const updateUserRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(userPermissionKey, "can_update"),
+    requirePermission(),
   ] as const,
   request: {
     params: userIdParamsSchema,
@@ -288,7 +286,7 @@ export const deleteUserRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(userPermissionKey, "can_delete"),
+    requirePermission(),
   ] as const,
   request: {
     params: userIdParamsSchema,

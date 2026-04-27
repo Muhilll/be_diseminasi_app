@@ -31,6 +31,7 @@ export class RolePermissionService {
         id: rolePermission.menu_ref_id,
         name: rolePermission.menu_name,
         path: rolePermission.menu_path,
+        permission_path: rolePermission.menu_permission_path,
         icon: rolePermission.menu_icon,
         parent_id: rolePermission.menu_parent_id,
       },

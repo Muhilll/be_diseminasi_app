@@ -12,8 +12,6 @@ import {
 } from "../../../docs/openapi-common";
 import { roleSchema } from "../../../docs/openapi-schemas";
 
-const rolePermissionKey = "/master-data/roles";
-
 const roleIdParamsSchema = createNumericPathParamsSchema("id");
 
 const createRoleRequestSchema = z
@@ -65,7 +63,7 @@ export const getAllRolesRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(rolePermissionKey, "can_read"),
+    requirePermission(),
   ] as const,
   responses: {
     200: jsonResponse(roleListResponseSchema, "Roles fetched successfully"),
@@ -84,7 +82,7 @@ export const getRoleByIdRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(rolePermissionKey, "can_read"),
+    requirePermission(),
   ] as const,
   request: {
     params: roleIdParamsSchema,
@@ -108,7 +106,7 @@ export const createRoleRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(rolePermissionKey, "can_create"),
+    requirePermission(),
   ] as const,
   request: {
     body: {
@@ -138,7 +136,7 @@ export const updateRoleRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(rolePermissionKey, "can_update"),
+    requirePermission(),
   ] as const,
   request: {
     params: roleIdParamsSchema,
@@ -170,7 +168,7 @@ export const deleteRoleRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(rolePermissionKey, "can_delete"),
+    requirePermission(),
   ] as const,
   request: {
     params: roleIdParamsSchema,

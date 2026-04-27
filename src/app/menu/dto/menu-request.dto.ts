@@ -1,6 +1,7 @@
 export type CreateMenuRequestDto = {
   name: string;
   path: string;
+  permission_path?: string | null;
   icon?: string | null;
   parent_id?: number | null;
 };
@@ -8,6 +9,7 @@ export type CreateMenuRequestDto = {
 export type UpdateMenuRequestDto = Partial<{
   name: string;
   path: string;
+  permission_path: string | null;
   icon: string | null;
   parent_id: number | null;
 }>;

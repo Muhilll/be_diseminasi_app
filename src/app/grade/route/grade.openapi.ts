@@ -14,8 +14,6 @@ import {
 } from "../../../docs/openapi-common";
 import { gradeSchema } from "../../../docs/openapi-schemas";
 
-const gradePermissionKey = "/master-data/grades";
-
 const gradeIdParamsSchema = createNumericPathParamsSchema("id");
 
 const createGradeRequestSchema = z
@@ -69,7 +67,7 @@ export const getAllGradesRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(gradePermissionKey, "can_read"),
+    requirePermission(),
   ] as const,
   responses: {
     200: jsonResponse(gradeListResponseSchema, "Grades fetched successfully"),
@@ -88,7 +86,7 @@ export const getGradeByIdRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(gradePermissionKey, "can_read"),
+    requirePermission(),
   ] as const,
   request: {
     params: gradeIdParamsSchema,
@@ -112,7 +110,7 @@ export const createGradeRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(gradePermissionKey, "can_create"),
+    requirePermission(),
   ] as const,
   request: {
     body: {
@@ -142,7 +140,7 @@ export const updateGradeRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(gradePermissionKey, "can_update"),
+    requirePermission(),
   ] as const,
   request: {
     params: gradeIdParamsSchema,
@@ -174,7 +172,7 @@ export const deleteGradeRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(gradePermissionKey, "can_delete"),
+    requirePermission(),
   ] as const,
   request: {
     params: gradeIdParamsSchema,

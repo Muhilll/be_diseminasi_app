@@ -12,8 +12,6 @@ import {
 } from "../../../docs/openapi-common";
 import { positionSchema } from "../../../docs/openapi-schemas";
 
-const positionPermissionKey = "/master-data/positions";
-
 const positionIdParamsSchema = createNumericPathParamsSchema("id");
 
 const createPositionRequestSchema = z
@@ -65,7 +63,7 @@ export const getAllPositionsRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(positionPermissionKey, "can_read"),
+    requirePermission(),
   ] as const,
   responses: {
     200: jsonResponse(
@@ -87,7 +85,7 @@ export const getPositionByIdRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(positionPermissionKey, "can_read"),
+    requirePermission(),
   ] as const,
   request: {
     params: positionIdParamsSchema,
@@ -111,7 +109,7 @@ export const createPositionRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(positionPermissionKey, "can_create"),
+    requirePermission(),
   ] as const,
   request: {
     body: {
@@ -144,7 +142,7 @@ export const updatePositionRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(positionPermissionKey, "can_update"),
+    requirePermission(),
   ] as const,
   request: {
     params: positionIdParamsSchema,
@@ -179,7 +177,7 @@ export const deletePositionRoute = createRoute({
   middleware: [
     jwtMiddleware,
     appTokenMiddleware,
-    requirePermission(positionPermissionKey, "can_delete"),
+    requirePermission(),
   ] as const,
   request: {
     params: positionIdParamsSchema,

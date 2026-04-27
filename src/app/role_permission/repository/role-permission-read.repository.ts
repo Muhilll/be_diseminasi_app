@@ -24,6 +24,7 @@ export class RolePermissionReadRepository {
           menu_ref_id: menus.id,
           menu_name: menus.name,
           menu_path: menus.path,
+          menu_permission_path: menus.permission_path,
           menu_icon: menus.icon,
           menu_parent_id: menus.parent_id,
         })
@@ -55,6 +56,7 @@ export class RolePermissionReadRepository {
           menu_ref_id: menus.id,
           menu_name: menus.name,
           menu_path: menus.path,
+          menu_permission_path: menus.permission_path,
           menu_icon: menus.icon,
           menu_parent_id: menus.parent_id,
         })
@@ -90,6 +92,7 @@ export class RolePermissionReadRepository {
           menu_ref_id: menus.id,
           menu_name: menus.name,
           menu_path: menus.path,
+          menu_permission_path: menus.permission_path,
           menu_icon: menus.icon,
           menu_parent_id: menus.parent_id,
         })
@@ -102,7 +105,10 @@ export class RolePermissionReadRepository {
     }
   }
 
-  static async getPermissionByRoleIdAndMenuKey(roleId: number, menuKey: string) {
+  static async getPermissionByRoleIdAndPermissionPath(
+    roleId: number,
+    permissionPath: string,
+  ) {
     try {
       const result = await db
         .select({
@@ -117,7 +123,7 @@ export class RolePermissionReadRepository {
         .where(
           and(
             eq(role_permissions.role_id, roleId),
-            eq(menus.path, menuKey),
+            eq(menus.permission_path, permissionPath),
           ),
         );
 

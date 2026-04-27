@@ -28,6 +28,9 @@ export const menuSchema = z
     path: z.string().openapi({
       example: "/dashboard",
     }),
+    permission_path: z.string().nullable().openapi({
+      example: null,
+    }),
     icon: z.string().nullable().openapi({
       example: null,
     }),
@@ -263,6 +266,9 @@ export const rolePermissionSchema = z
       }),
       path: z.string().openapi({
         example: "/master-data",
+      }),
+      permission_path: z.string().nullable().openapi({
+        example: null,
       }),
       icon: z.string().nullable().openapi({
         example: null,

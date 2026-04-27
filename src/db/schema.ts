@@ -17,6 +17,7 @@ export const menus = mysqlTable(
     id: int().primaryKey().autoincrement(),
     name: varchar({ length: 100 }).notNull(),
     path: varchar({ length: 255 }).notNull(),
+    permission_path: varchar({ length: 255 }),
     icon: varchar({ length: 255 }),
     parent_id: int(),
     created_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
