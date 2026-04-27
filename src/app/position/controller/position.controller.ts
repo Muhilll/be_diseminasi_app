@@ -10,6 +10,40 @@ type ParsedPositionId =
   | { success: false; error: string };
 
 export class PositionController {
+  private static getValidatedRequest(c: Context) {
+    return c.req as typeof c.req & {
+      valid: (target: "param" | "json") => unknown;
+    };
+  }
+
+  private static getValidatedParamId(c: Context): number | null {
+    const validatedParams = PositionController.getValidatedRequest(c).valid(
+      "param",
+    ) as { id?: number } | undefined;
+
+    if (typeof validatedParams?.id === "number" && !isNaN(validatedParams.id)) {
+      return validatedParams.id;
+    }
+
+    return null;
+  }
+
+  private static async getValidatedBody<T>(c: Context): Promise<T> {
+    const validatedBody = PositionController.getValidatedRequest(c).valid(
+      "json",
+    ) as T | undefined;
+
+    if (
+      validatedBody &&
+      typeof validatedBody === "object" &&
+      Object.keys(validatedBody as Record<string, unknown>).length > 0
+    ) {
+      return validatedBody;
+    }
+
+    return (await c.req.json()) as T;
+  }
+
   private static parsePositionIdParam(
     idParam: string | undefined,
   ): ParsedPositionId {
@@ -58,7 +92,11 @@ export class PositionController {
 
   static async getById(c: Context) {
     try {
-      const parsedId = PositionController.parsePositionIdParam(c.req.param("id"));
+      const validatedId = PositionController.getValidatedParamId(c);
+      const parsedId =
+        validatedId !== null
+          ? { success: true as const, id: validatedId }
+          : PositionController.parsePositionIdParam(c.req.param("id"));
 
       if (parsedId.success === false) {
         return c.json({ success: false, message: parsedId.error }, 400);
@@ -89,7 +127,9 @@ export class PositionController {
 
   static async create(c: Context) {
     try {
-      const body: CreatePositionRequestDto = await c.req.json();
+      const body = await PositionController.getValidatedBody<CreatePositionRequestDto>(
+        c,
+      );
 
       if (!body.category) {
         return c.json(
@@ -125,13 +165,19 @@ export class PositionController {
 
   static async update(c: Context) {
     try {
-      const parsedId = PositionController.parsePositionIdParam(c.req.param("id"));
+      const validatedId = PositionController.getValidatedParamId(c);
+      const parsedId =
+        validatedId !== null
+          ? { success: true as const, id: validatedId }
+          : PositionController.parsePositionIdParam(c.req.param("id"));
 
       if (parsedId.success === false) {
         return c.json({ success: false, message: parsedId.error }, 400);
       }
 
-      const body: UpdatePositionRequestDto = await c.req.json();
+      const body = await PositionController.getValidatedBody<UpdatePositionRequestDto>(
+        c,
+      );
       const updateResult = await PositionService.updatePosition(parsedId.id, body);
 
       if (!updateResult) {
@@ -157,7 +203,11 @@ export class PositionController {
 
   static async delete(c: Context) {
     try {
-      const parsedId = PositionController.parsePositionIdParam(c.req.param("id"));
+      const validatedId = PositionController.getValidatedParamId(c);
+      const parsedId =
+        validatedId !== null
+          ? { success: true as const, id: validatedId }
+          : PositionController.parsePositionIdParam(c.req.param("id"));
 
       if (parsedId.success === false) {
         return c.json({ success: false, message: parsedId.error }, 400);

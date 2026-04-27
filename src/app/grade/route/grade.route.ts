@@ -1,37 +1,30 @@
-import { Hono } from "hono";
-import { appTokenMiddleware } from "../../../middleware/appToken";
-import { jwtMiddleware } from "../../../middleware/auth";
-import { requirePermission } from "../../../middleware/permission";
 import { GradeController } from "../controller/grade.controller";
+import {
+  createModuleOpenApiDocument,
+  createOpenApiRouter,
+  registerOpenApiRoute,
+  registerDefaultSecuritySchemes,
+} from "../../../docs/openapi-common";
+import {
+  createGradeRoute,
+  deleteGradeRoute,
+  getAllGradesRoute,
+  getGradeByIdRoute,
+  updateGradeRoute,
+} from "./grade.openapi";
 
-const router = new Hono();
+const router = createOpenApiRouter();
 
-router.use("/*", jwtMiddleware, appTokenMiddleware);
+registerDefaultSecuritySchemes(router);
 
-router.get(
-  "/",
-  requirePermission("/master-data/grades", "can_read"),
-  GradeController.getAll,
-);
-router.get(
-  "/:id",
-  requirePermission("/master-data/grades", "can_read"),
-  GradeController.getById,
-);
-router.post(
-  "/",
-  requirePermission("/master-data/grades", "can_create"),
-  GradeController.create,
-);
-router.put(
-  "/:id",
-  requirePermission("/master-data/grades", "can_update"),
-  GradeController.update,
-);
-router.delete(
-  "/:id",
-  requirePermission("/master-data/grades", "can_delete"),
-  GradeController.delete,
-);
+registerOpenApiRoute(router, getAllGradesRoute, GradeController.getAll);
+registerOpenApiRoute(router, getGradeByIdRoute, GradeController.getById);
+registerOpenApiRoute(router, createGradeRoute, GradeController.create);
+registerOpenApiRoute(router, updateGradeRoute, GradeController.update);
+registerOpenApiRoute(router, deleteGradeRoute, GradeController.delete);
+
+export function getGradeOpenApiDocument(baseUrl: string) {
+  return createModuleOpenApiDocument(router, baseUrl, "Grade API");
+}
 
 export default router;

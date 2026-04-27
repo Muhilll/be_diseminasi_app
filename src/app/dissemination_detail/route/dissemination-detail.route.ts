@@ -1,42 +1,40 @@
-import { Hono } from "hono";
-import { appTokenMiddleware } from "../../../middleware/appToken";
-import { jwtMiddleware } from "../../../middleware/auth";
-import { requirePermission } from "../../../middleware/permission";
 import { DisseminationDetailController } from "../controller/dissemination-detail.controller";
+import {
+  createModuleOpenApiDocument,
+  createOpenApiRouter,
+  registerOpenApiRoute,
+  registerDefaultSecuritySchemes,
+} from "../../../docs/openapi-common";
+import {
+  createDisseminationDetailRoute,
+  deleteDisseminationDetailRoute,
+  getAllDisseminationDetailsRoute,
+  getDisseminationDetailByIdRoute,
+  getDisseminationDetailsByDisseminationIdRoute,
+  updateDisseminationDetailRoute,
+} from "./dissemination-detail.openapi";
 
-const router = new Hono();
+const router = createOpenApiRouter();
 
-router.use("/*", jwtMiddleware, appTokenMiddleware);
+registerDefaultSecuritySchemes(router);
 
-router.get(
-  "/",
-  requirePermission("/dissemination-details", "can_read"),
-  DisseminationDetailController.getAll,
-);
-router.get(
-  "/:id",
-  requirePermission("/dissemination-details", "can_read"),
-  DisseminationDetailController.getById,
-);
-router.get(
-  "/dissemination/:disseminationId",
-  requirePermission("/dissemination-details", "can_read"),
+registerOpenApiRoute(router, getAllDisseminationDetailsRoute, DisseminationDetailController.getAll);
+registerOpenApiRoute(router, getDisseminationDetailByIdRoute, DisseminationDetailController.getById);
+registerOpenApiRoute(
+  router,
+  getDisseminationDetailsByDisseminationIdRoute,
   DisseminationDetailController.getByDisseminationId,
 );
-router.post(
-  "/",
-  requirePermission("/dissemination-details", "can_create"),
-  DisseminationDetailController.create,
-);
-router.put(
-  "/:id",
-  requirePermission("/dissemination-details", "can_update"),
-  DisseminationDetailController.update,
-);
-router.delete(
-  "/:id",
-  requirePermission("/dissemination-details", "can_delete"),
-  DisseminationDetailController.delete,
-);
+registerOpenApiRoute(router, createDisseminationDetailRoute, DisseminationDetailController.create);
+registerOpenApiRoute(router, updateDisseminationDetailRoute, DisseminationDetailController.update);
+registerOpenApiRoute(router, deleteDisseminationDetailRoute, DisseminationDetailController.delete);
+
+export function getDisseminationDetailOpenApiDocument(baseUrl: string) {
+  return createModuleOpenApiDocument(
+    router,
+    baseUrl,
+    "Dissemination Detail API",
+  );
+}
 
 export default router;

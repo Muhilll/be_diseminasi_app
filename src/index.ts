@@ -13,6 +13,11 @@ import disseminationRoutes from './app/dissemination/route/dissemination.route';
 import disseminationDetailRoutes from './app/dissemination_detail/route/dissemination-detail.route';
 import absensiRoutes from './app/absensi/route/absensi.route';
 import uploadRoutes from './app/upload/route/upload.route';
+import {
+  createOpenApiDocument,
+  getServerUrl,
+  renderScalarReference,
+} from './docs/openapi';
 
 const app = new Hono();
 const normalizeOrigin = (origin: string) => origin.trim().replace(/\/+$/, '');
@@ -62,6 +67,16 @@ app.get('/api/health', (c) => {
     message: 'API is running',
     timestamp: new Date().toISOString(),
   });
+});
+
+// OpenAPI and Scalar reference (Public)
+app.get('/openapi.json', (c) => {
+  const baseUrl = getServerUrl(c.req.url);
+  return c.json(createOpenApiDocument(baseUrl));
+});
+
+app.get('/docs', (c) => {
+  return c.html(renderScalarReference('/openapi.json'));
 });
 
 // API Routes - Feature based

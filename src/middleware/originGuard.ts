@@ -29,6 +29,14 @@ function getRequestOrigin(c: Context) {
   }
 }
 
+function getServerOrigin(c: Context) {
+  try {
+    return normalizeOrigin(new URL(c.req.url).origin);
+  } catch {
+    return undefined;
+  }
+}
+
 export const originGuard = async (c: Context, next: Next) => {
   if (allowedOrigins.length === 0) {
     await next();
@@ -39,8 +47,15 @@ export const originGuard = async (c: Context, next: Next) => {
   const normalizedRequestOrigin = requestOrigin
     ? normalizeOrigin(requestOrigin)
     : undefined;
+  const serverOrigin = getServerOrigin(c);
 
   if (!normalizedRequestOrigin) {
+    await next();
+    return;
+  }
+
+  // Allow same-origin requests, including docs pages that fetch local assets/specs.
+  if (serverOrigin && normalizedRequestOrigin === serverOrigin) {
     await next();
     return;
   }

@@ -1,42 +1,40 @@
-import { Hono } from "hono";
-import { appTokenMiddleware } from "../../../middleware/appToken";
-import { jwtMiddleware } from "../../../middleware/auth";
-import { requirePermission } from "../../../middleware/permission";
 import { UserAuthController } from "../controller/user-auth.controller";
 import { UserNavigationController } from "../controller/user-navigation.controller";
 import { UserController } from "../controller/user.controller";
+import {
+  createModuleOpenApiDocument,
+  createOpenApiRouter,
+  registerOpenApiRoute,
+  registerDefaultSecuritySchemes,
+} from "../../../docs/openapi-common";
+import {
+  createUserRoute,
+  deleteUserRoute,
+  getAllUsersRoute,
+  getCurrentUserNavigationRoute,
+  getUserByIdRoute,
+  loginUserRoute,
+  updateUserRoute,
+} from "./user.openapi";
 
-const router = new Hono();
+const router = createOpenApiRouter();
 
-router.post("/login", UserAuthController.login);
+registerDefaultSecuritySchemes(router);
 
-router.use("/*", jwtMiddleware, appTokenMiddleware);
+registerOpenApiRoute(router, loginUserRoute, UserAuthController.login);
+registerOpenApiRoute(router, getAllUsersRoute, UserController.getAll);
+registerOpenApiRoute(
+  router,
+  getCurrentUserNavigationRoute,
+  UserNavigationController.getNavigation,
+);
+registerOpenApiRoute(router, getUserByIdRoute, UserController.getById);
+registerOpenApiRoute(router, createUserRoute, UserController.create);
+registerOpenApiRoute(router, updateUserRoute, UserController.update);
+registerOpenApiRoute(router, deleteUserRoute, UserController.delete);
 
-router.get(
-  "/",
-  requirePermission("/master-data/users", "can_read"),
-  UserController.getAll,
-);
-router.get("/me/navigation", UserNavigationController.getNavigation);
-router.get(
-  "/:id",
-  requirePermission("/master-data/users", "can_read"),
-  UserController.getById,
-);
-router.post(
-  "/",
-  requirePermission("/master-data/users", "can_create"),
-  UserController.create,
-);
-router.put(
-  "/:id",
-  requirePermission("/master-data/users", "can_update"),
-  UserController.update,
-);
-router.delete(
-  "/:id",
-  requirePermission("/master-data/users", "can_delete"),
-  UserController.delete,
-);
+export function getUserOpenApiDocument(baseUrl: string) {
+  return createModuleOpenApiDocument(router, baseUrl, "User API");
+}
 
 export default router;

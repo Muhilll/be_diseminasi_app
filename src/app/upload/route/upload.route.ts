@@ -1,12 +1,24 @@
-import { Hono } from "hono";
-import { appTokenMiddleware } from "../../../middleware/appToken";
-import { jwtMiddleware } from "../../../middleware/auth";
 import { UploadController } from "../controller/upload.controller";
+import {
+  createModuleOpenApiDocument,
+  createOpenApiRouter,
+  registerOpenApiRoute,
+  registerDefaultSecuritySchemes,
+} from "../../../docs/openapi-common";
+import { createUploadSignatureRoute } from "./upload.openapi";
 
-const router = new Hono();
+const router = createOpenApiRouter();
 
-router.use("/*", jwtMiddleware, appTokenMiddleware);
+registerDefaultSecuritySchemes(router);
 
-router.post("/signature", UploadController.createSignature);
+registerOpenApiRoute(
+  router,
+  createUploadSignatureRoute,
+  UploadController.createSignature,
+);
+
+export function getUploadOpenApiDocument(baseUrl: string) {
+  return createModuleOpenApiDocument(router, baseUrl, "Upload API");
+}
 
 export default router;

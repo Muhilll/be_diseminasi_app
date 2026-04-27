@@ -1,37 +1,30 @@
-import { Hono } from "hono";
-import { appTokenMiddleware } from "../../../middleware/appToken";
-import { jwtMiddleware } from "../../../middleware/auth";
-import { requirePermission } from "../../../middleware/permission";
 import { RoleController } from "../controller/role.controller";
+import {
+  createModuleOpenApiDocument,
+  createOpenApiRouter,
+  registerOpenApiRoute,
+  registerDefaultSecuritySchemes,
+} from "../../../docs/openapi-common";
+import {
+  createRoleRoute,
+  deleteRoleRoute,
+  getAllRolesRoute,
+  getRoleByIdRoute,
+  updateRoleRoute,
+} from "./role.openapi";
 
-const router = new Hono();
+const router = createOpenApiRouter();
 
-router.use("/*", jwtMiddleware, appTokenMiddleware);
+registerDefaultSecuritySchemes(router);
 
-router.get(
-  "/",
-  requirePermission("/master-data/roles", "can_read"),
-  RoleController.getAll,
-);
-router.get(
-  "/:id",
-  requirePermission("/master-data/roles", "can_read"),
-  RoleController.getById,
-);
-router.post(
-  "/",
-  requirePermission("/master-data/roles", "can_create"),
-  RoleController.create,
-);
-router.put(
-  "/:id",
-  requirePermission("/master-data/roles", "can_update"),
-  RoleController.update,
-);
-router.delete(
-  "/:id",
-  requirePermission("/master-data/roles", "can_delete"),
-  RoleController.delete,
-);
+registerOpenApiRoute(router, getAllRolesRoute, RoleController.getAll);
+registerOpenApiRoute(router, getRoleByIdRoute, RoleController.getById);
+registerOpenApiRoute(router, createRoleRoute, RoleController.create);
+registerOpenApiRoute(router, updateRoleRoute, RoleController.update);
+registerOpenApiRoute(router, deleteRoleRoute, RoleController.delete);
+
+export function getRoleOpenApiDocument(baseUrl: string) {
+  return createModuleOpenApiDocument(router, baseUrl, "Role API");
+}
 
 export default router;

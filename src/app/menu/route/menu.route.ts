@@ -1,37 +1,30 @@
-import { Hono } from "hono";
-import { appTokenMiddleware } from "../../../middleware/appToken";
-import { jwtMiddleware } from "../../../middleware/auth";
-import { requirePermission } from "../../../middleware/permission";
 import { MenuController } from "../controller/menu.controller";
+import {
+  createModuleOpenApiDocument,
+  createOpenApiRouter,
+  registerOpenApiRoute,
+  registerDefaultSecuritySchemes,
+} from "../../../docs/openapi-common";
+import {
+  createMenuRoute,
+  deleteMenuRoute,
+  getAllMenusRoute,
+  getMenuByIdRoute,
+  updateMenuRoute,
+} from "./menu.openapi";
 
-const router = new Hono();
+const router = createOpenApiRouter();
 
-router.use("/*", jwtMiddleware, appTokenMiddleware);
+registerDefaultSecuritySchemes(router);
 
-router.get(
-  "/",
-  requirePermission("/web-management/menus", "can_read"),
-  MenuController.getAll,
-);
-router.get(
-  "/:id",
-  requirePermission("/web-management/menus", "can_read"),
-  MenuController.getById,
-);
-router.post(
-  "/",
-  requirePermission("/web-management/menus", "can_create"),
-  MenuController.create,
-);
-router.put(
-  "/:id",
-  requirePermission("/web-management/menus", "can_update"),
-  MenuController.update,
-);
-router.delete(
-  "/:id",
-  requirePermission("/web-management/menus", "can_delete"),
-  MenuController.delete,
-);
+registerOpenApiRoute(router, getAllMenusRoute, MenuController.getAll);
+registerOpenApiRoute(router, getMenuByIdRoute, MenuController.getById);
+registerOpenApiRoute(router, createMenuRoute, MenuController.create);
+registerOpenApiRoute(router, updateMenuRoute, MenuController.update);
+registerOpenApiRoute(router, deleteMenuRoute, MenuController.delete);
+
+export function getMenuOpenApiDocument(baseUrl: string) {
+  return createModuleOpenApiDocument(router, baseUrl, "Menu API");
+}
 
 export default router;

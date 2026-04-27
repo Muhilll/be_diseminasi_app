@@ -1,42 +1,32 @@
-import { Hono } from "hono";
-import { appTokenMiddleware } from "../../../middleware/appToken";
-import { jwtMiddleware } from "../../../middleware/auth";
-import { requirePermission } from "../../../middleware/permission";
 import { AbsensiController } from "../controller/absensi.controller";
+import {
+  createModuleOpenApiDocument,
+  createOpenApiRouter,
+  registerOpenApiRoute,
+  registerDefaultSecuritySchemes,
+} from "../../../docs/openapi-common";
+import {
+  createAbsensiRoute,
+  deleteAbsensiRoute,
+  getAbsensiByIdRoute,
+  getAbsensisByUserIdRoute,
+  getAllAbsensisRoute,
+  updateAbsensiRoute,
+} from "./absensi.openapi";
 
-const router = new Hono();
+const router = createOpenApiRouter();
 
-router.use("/*", jwtMiddleware, appTokenMiddleware);
+registerDefaultSecuritySchemes(router);
 
-router.get(
-  "/",
-  requirePermission("/absensis", "can_read"),
-  AbsensiController.getAll,
-);
-router.get(
-  "/:id",
-  requirePermission("/absensis", "can_read"),
-  AbsensiController.getById,
-);
-router.get(
-  "/user/:userId",
-  requirePermission("/absensis", "can_read"),
-  AbsensiController.getByUserId,
-);
-router.post(
-  "/",
-  requirePermission("/absensis", "can_create"),
-  AbsensiController.create,
-);
-router.put(
-  "/:id",
-  requirePermission("/absensis", "can_update"),
-  AbsensiController.update,
-);
-router.delete(
-  "/:id",
-  requirePermission("/absensis", "can_delete"),
-  AbsensiController.delete,
-);
+registerOpenApiRoute(router, getAllAbsensisRoute, AbsensiController.getAll);
+registerOpenApiRoute(router, getAbsensiByIdRoute, AbsensiController.getById);
+registerOpenApiRoute(router, getAbsensisByUserIdRoute, AbsensiController.getByUserId);
+registerOpenApiRoute(router, createAbsensiRoute, AbsensiController.create);
+registerOpenApiRoute(router, updateAbsensiRoute, AbsensiController.update);
+registerOpenApiRoute(router, deleteAbsensiRoute, AbsensiController.delete);
+
+export function getAbsensiOpenApiDocument(baseUrl: string) {
+  return createModuleOpenApiDocument(router, baseUrl, "Absensi API");
+}
 
 export default router;

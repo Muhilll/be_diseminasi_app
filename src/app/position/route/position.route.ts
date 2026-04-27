@@ -1,37 +1,30 @@
-import { Hono } from "hono";
-import { appTokenMiddleware } from "../../../middleware/appToken";
-import { jwtMiddleware } from "../../../middleware/auth";
-import { requirePermission } from "../../../middleware/permission";
 import { PositionController } from "../controller/position.controller";
+import {
+  createPositionRoute,
+  deletePositionRoute,
+  getAllPositionsRoute,
+  getPositionByIdRoute,
+  updatePositionRoute,
+} from "./position.openapi";
+import {
+  createModuleOpenApiDocument,
+  createOpenApiRouter,
+  registerOpenApiRoute,
+  registerDefaultSecuritySchemes,
+} from "../../../docs/openapi-common";
 
-const router = new Hono();
+const router = createOpenApiRouter();
 
-router.use("/*", jwtMiddleware, appTokenMiddleware);
+registerDefaultSecuritySchemes(router);
 
-router.get(
-  "/",
-  requirePermission("/master-data/positions", "can_read"),
-  PositionController.getAll,
-);
-router.get(
-  "/:id",
-  requirePermission("/master-data/positions", "can_read"),
-  PositionController.getById,
-);
-router.post(
-  "/",
-  requirePermission("/master-data/positions", "can_create"),
-  PositionController.create,
-);
-router.put(
-  "/:id",
-  requirePermission("/master-data/positions", "can_update"),
-  PositionController.update,
-);
-router.delete(
-  "/:id",
-  requirePermission("/master-data/positions", "can_delete"),
-  PositionController.delete,
-);
+registerOpenApiRoute(router, getAllPositionsRoute, PositionController.getAll);
+registerOpenApiRoute(router, getPositionByIdRoute, PositionController.getById);
+registerOpenApiRoute(router, createPositionRoute, PositionController.create);
+registerOpenApiRoute(router, updatePositionRoute, PositionController.update);
+registerOpenApiRoute(router, deletePositionRoute, PositionController.delete);
+
+export function getPositionOpenApiDocument(baseUrl: string) {
+  return createModuleOpenApiDocument(router, baseUrl, "Position API");
+}
 
 export default router;

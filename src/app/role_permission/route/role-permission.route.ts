@@ -1,42 +1,36 @@
-import { Hono } from "hono";
-import { appTokenMiddleware } from "../../../middleware/appToken";
-import { jwtMiddleware } from "../../../middleware/auth";
-import { requirePermission } from "../../../middleware/permission";
 import { RolePermissionController } from "../controller/role-permission.controller";
+import {
+  createModuleOpenApiDocument,
+  createOpenApiRouter,
+  registerOpenApiRoute,
+  registerDefaultSecuritySchemes,
+} from "../../../docs/openapi-common";
+import {
+  createRolePermissionRoute,
+  deleteRolePermissionRoute,
+  getAllRolePermissionsRoute,
+  getRolePermissionByIdRoute,
+  getRolePermissionsByRoleIdRoute,
+  updateRolePermissionRoute,
+} from "./role-permission.openapi";
 
-const router = new Hono();
+const router = createOpenApiRouter();
 
-router.use("/*", jwtMiddleware, appTokenMiddleware);
+registerDefaultSecuritySchemes(router);
 
-router.get(
-  "/",
-  requirePermission("/web-management/role-permissions", "can_read"),
-  RolePermissionController.getAll,
-);
-router.get(
-  "/:id",
-  requirePermission("/web-management/role-permissions", "can_read"),
-  RolePermissionController.getById,
-);
-router.get(
-  "/role/:roleId",
-  requirePermission("/web-management/role-permissions", "can_read"),
+registerOpenApiRoute(router, getAllRolePermissionsRoute, RolePermissionController.getAll);
+registerOpenApiRoute(router, getRolePermissionByIdRoute, RolePermissionController.getById);
+registerOpenApiRoute(
+  router,
+  getRolePermissionsByRoleIdRoute,
   RolePermissionController.getByRoleId,
 );
-router.post(
-  "/",
-  requirePermission("/web-management/role-permissions", "can_create"),
-  RolePermissionController.create,
-);
-router.put(
-  "/:id",
-  requirePermission("/web-management/role-permissions", "can_update"),
-  RolePermissionController.update,
-);
-router.delete(
-  "/:id",
-  requirePermission("/web-management/role-permissions", "can_delete"),
-  RolePermissionController.delete,
-);
+registerOpenApiRoute(router, createRolePermissionRoute, RolePermissionController.create);
+registerOpenApiRoute(router, updateRolePermissionRoute, RolePermissionController.update);
+registerOpenApiRoute(router, deleteRolePermissionRoute, RolePermissionController.delete);
+
+export function getRolePermissionOpenApiDocument(baseUrl: string) {
+  return createModuleOpenApiDocument(router, baseUrl, "Role Permission API");
+}
 
 export default router;
