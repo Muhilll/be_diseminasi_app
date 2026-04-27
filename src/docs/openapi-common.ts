@@ -129,7 +129,7 @@ export function jsonResponse(schema: z.ZodTypeAny, description: string) {
 export function createOpenApiRouter() {
   return new OpenAPIHono({
     defaultHook: (result, c) => {
-      if (!result.success) {
+      if (result.success === false) {
         return c.json(
           {
             success: false,
@@ -165,7 +165,10 @@ export function registerOpenApiRoute<R extends RouteConfig>(
   handler: unknown,
 ) {
   // Bridge existing controllers to the typed OpenAPI route contract.
-  return router.openapi(route, handler as RouteHandler<R>);
+  return (router.openapi as (...args: unknown[]) => unknown)(
+    route,
+    handler as RouteHandler<R>,
+  );
 }
 
 export function createModuleOpenApiDocument(
