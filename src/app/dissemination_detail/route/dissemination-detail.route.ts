@@ -10,32 +10,32 @@ router.use("/*", jwtMiddleware, appTokenMiddleware);
 
 router.get(
   "/",
-  // requirePermission("/dissemination-details", "can_read"),
+  requirePermission("/dissemination-details", "can_read"),
   DisseminationDetailController.getAll,
 );
 router.get(
   "/:id",
-  // requirePermission("/dissemination-details", "can_read"),
+  requirePermission("/dissemination-details", "can_read"),
   DisseminationDetailController.getById,
 );
 router.get(
   "/dissemination/:disseminationId",
-  // requirePermission("/dissemination-details", "can_read"),
+  requirePermission("/dissemination-details", "can_read"),
   DisseminationDetailController.getByDisseminationId,
 );
 router.post(
   "/",
-  // requirePermission("/dissemination-details", "can_create"),
+  requirePermission("/dissemination-details", "can_create"),
   DisseminationDetailController.create,
 );
 router.put(
   "/:id",
-  // requirePermission("/dissemination-details", "can_update"),
+  requirePermission("/dissemination-details", "can_update"),
   DisseminationDetailController.update,
 );
 router.delete(
   "/:id",
-  // requirePermission("/dissemination-details", "can_delete"),
+  requirePermission("/dissemination-details", "can_delete"),
   DisseminationDetailController.delete,
 );
 
