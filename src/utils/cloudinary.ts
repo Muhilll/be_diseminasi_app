@@ -104,3 +104,17 @@ export async function deleteImageFromCloudinary(
     resource_type: "image",
   });
 }
+
+export async function deleteImageFromCloudinarySafely(
+  publicId: string | null | undefined,
+  target: CloudinaryTarget,
+) {
+  try {
+    await deleteImageFromCloudinary(publicId, target);
+  } catch (error) {
+    console.error(
+      `[Cloudinary] Failed to delete image "${publicId}" for ${target}:`,
+      error,
+    );
+  }
+}

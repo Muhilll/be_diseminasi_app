@@ -6,7 +6,7 @@ import {
 import { AbsensiResponseDto } from "../dto/absensi-response.dto";
 import { AbsensiReadRepository } from "../repository/absensi-read.repository";
 import { AbsensiWriteRepository } from "../repository/absensi-write.repository";
-import { deleteImageFromCloudinary } from "../../../utils/cloudinary";
+import { deleteImageFromCloudinarySafely } from "../../../utils/cloudinary";
 
 export class AbsensiService {
   private static mapAbsensi(absensi: AbsensiWithRelationsRow): AbsensiResponseDto {
@@ -64,11 +64,16 @@ export class AbsensiService {
       return null;
     }
 
-    if (payload.gambar !== undefined && absensi.gambar_public_id) {
-      await deleteImageFromCloudinary(absensi.gambar_public_id, "absensi");
+    const result = await AbsensiWriteRepository.updateAbsensi(id, payload);
+
+    const hasNewGambarPublicId =
+      typeof payload.gambar_public_id === "string" &&
+      payload.gambar_public_id !== absensi.gambar_public_id;
+
+    if (hasNewGambarPublicId) {
+      await deleteImageFromCloudinarySafely(absensi.gambar_public_id, "absensi");
     }
 
-    const result = await AbsensiWriteRepository.updateAbsensi(id, payload);
     return { absensi, result };
   }
 
@@ -80,9 +85,10 @@ export class AbsensiService {
       return null;
     }
 
-    await deleteImageFromCloudinary(absensi.gambar_public_id, "absensi");
-
     const result = await AbsensiWriteRepository.deleteAbsensi(id);
+
+    await deleteImageFromCloudinarySafely(absensi.gambar_public_id, "absensi");
+
     return { absensi, result };
   }
 }
