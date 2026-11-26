@@ -1,4 +1,7 @@
 import { getAbsensiOpenApiDocument } from "../app/absensi/route/absensi.route";
+import { getAttendanceOpenApiDocument } from "../app/attendance/route/attendance.route";
+import { getAttendanceScheduleOpenApiDocument } from "../app/attendance_schedule/route/attendance-schedule.route";
+import { getAttendanceSettingOpenApiDocument } from "../app/attendance_setting/route/attendance-setting.route";
 import { getDisseminationOpenApiDocument } from "../app/dissemination/route/dissemination.route";
 import { getDisseminationDetailOpenApiDocument } from "../app/dissemination_detail/route/dissemination-detail.route";
 import { getGradeOpenApiDocument } from "../app/grade/route/grade.route";
@@ -151,6 +154,18 @@ function createBaseDocument(baseUrl: string): OpenApiDocument {
       },
       { name: "Absensis", description: "Attendance or evidence records" },
       {
+        name: "Attendances",
+        description: "Location-verified check-in and check-out records",
+      },
+      {
+        name: "Attendance Settings",
+        description: "Global attendance location, radius, and deadline settings",
+      },
+      {
+        name: "Attendance Schedules",
+        description: "Weekly user attendance schedules",
+      },
+      {
         name: "Uploads",
         description: "Cloudinary signed upload helpers",
       },
@@ -275,6 +290,18 @@ export function createOpenApiDocument(baseUrl: string) {
       "/api/dissemination-details",
     ),
     mountOpenApiPaths(getAbsensiOpenApiDocument(baseUrl), "/api/absensis"),
+    mountOpenApiPaths(
+      getAttendanceOpenApiDocument(baseUrl),
+      "/api/attendances",
+    ),
+    mountOpenApiPaths(
+      getAttendanceSettingOpenApiDocument(baseUrl),
+      "/api/attendance-settings",
+    ),
+    mountOpenApiPaths(
+      getAttendanceScheduleOpenApiDocument(baseUrl),
+      "/api/attendance-schedules",
+    ),
     mountOpenApiPaths(getUploadOpenApiDocument(baseUrl), "/api/uploads"),
   ];
 

@@ -1,4 +1,6 @@
 import { hash } from "bcryptjs";
+import { eq } from "drizzle-orm";
+import { attendance_schedules, db } from "../../../db";
 import {
   CreateUserRequestDto,
   UpdateUserRequestDto,
@@ -29,6 +31,17 @@ export class UserService {
       password: hashedPassword,
     });
 
+    const createdUser = await UserReadRepository.getUserByEmail(payload.email);
+    if (createdUser) {
+      await db.insert(attendance_schedules).values(
+        Array.from({ length: 7 }, (_, day) => ({
+          user_id: createdUser.id,
+          day_of_week: day,
+          is_active: day === 6,
+        })),
+      );
+    }
+
     return { conflict: false as const, result };
   }
 
@@ -56,6 +69,7 @@ export class UserService {
       return null;
     }
 
+    await db.delete(attendance_schedules).where(eq(attendance_schedules.user_id, id));
     const result = await UserWriteRepository.deleteUser(id);
     return { user, result };
   }

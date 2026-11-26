@@ -1,5 +1,6 @@
 import {
   int,
+  double,
   varchar,
   text,
   datetime,
@@ -8,6 +9,7 @@ import {
   primaryKey,
   foreignKey,
   index,
+  uniqueIndex,
 } from "drizzle-orm/mysql-core";
 import { sql } from "drizzle-orm/sql/sql";
 
@@ -185,4 +187,76 @@ updated_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
       foreignColumns: [disseminations.id],
     }),
   })
+);
+
+// Attendance Settings Table (singleton global config)
+export const attendance_settings = mysqlTable("attendance_settings", {
+  id: int().primaryKey().autoincrement(),
+  location_name: varchar({ length: 150 }).notNull(),
+  latitude: double().notNull(),
+  longitude: double().notNull(),
+  radius_meters: int().notNull().default(100),
+  check_in_deadline: varchar({ length: 5 }).notNull(),
+  check_out_deadline: varchar({ length: 5 }).notNull(),
+  created_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updated_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+// Attendance Schedules Table (weekly schedule per user)
+export const attendance_schedules = mysqlTable(
+  "attendance_schedules",
+  {
+    id: int().primaryKey().autoincrement(),
+    user_id: int().notNull(),
+    day_of_week: int().notNull(), // 0 = Sunday .. 6 = Saturday
+    is_active: boolean().notNull().default(true),
+    created_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
+    updated_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
+  },
+  (table) => ({
+    user_fk: foreignKey({
+      columns: [table.user_id],
+      foreignColumns: [users.id],
+    }),
+    user_day_unique: uniqueIndex("attendance_schedules_user_day_unique").on(
+      table.user_id,
+      table.day_of_week,
+    ),
+  }),
+);
+
+// Attendances Table (check-in / check-out daily records)
+export const attendances = mysqlTable(
+  "attendances",
+  {
+    id: int().primaryKey().autoincrement(),
+    user_id: int().notNull(),
+    attendance_date: varchar({ length: 10 }).notNull(), // YYYY-MM-DD in APP_TIMEZONE
+    check_in_time: datetime().notNull(),
+    check_in_lat: double(),
+    check_in_lng: double(),
+    check_in_image: varchar({ length: 255 }).notNull(),
+    check_in_image_public_id: varchar({ length: 255 }).notNull(),
+    check_in_note: text(),
+    check_in_status: varchar({ length: 30 }).notNull(), // 'on_time' | 'late' | 'legacy'
+    check_out_time: datetime(),
+    check_out_lat: double(),
+    check_out_lng: double(),
+    check_out_image: varchar({ length: 255 }),
+    check_out_image_public_id: varchar({ length: 255 }),
+    check_out_note: text(),
+    check_out_status: varchar({ length: 30 }), // 'on_time' | 'late_checkout'
+    created_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
+    updated_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
+  },
+  (table) => ({
+    user_fk: foreignKey({
+      columns: [table.user_id],
+      foreignColumns: [users.id],
+    }),
+    user_date_idx: index("attendances_user_date_idx").on(
+      table.user_id,
+      table.attendance_date,
+    ),
+  }),
 );

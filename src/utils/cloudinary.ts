@@ -1,7 +1,7 @@
 import { v2 as cloudinary } from "cloudinary";
 
-type CloudinaryTarget = "dissemination_details" | "absensi";
-type CloudinaryFolder = "disseminations" | "absensi";
+type CloudinaryTarget = "dissemination_details" | "absensi" | "attendance";
+type CloudinaryFolder = "disseminations" | "absensi" | "attendance";
 
 function getCloudinaryUrl(target: CloudinaryTarget) {
   if (target === "dissemination_details") {
@@ -42,6 +42,10 @@ function configureCloudinary(target: CloudinaryTarget) {
 function getCloudinaryFolder(target: CloudinaryTarget): CloudinaryFolder {
   if (target === "dissemination_details") {
     return "disseminations";
+  }
+
+  if (target === "attendance") {
+    return "attendance";
   }
 
   return "absensi";
@@ -103,4 +107,18 @@ export async function deleteImageFromCloudinary(
   await cloudinary.uploader.destroy(publicId, {
     resource_type: "image",
   });
+}
+
+export async function deleteImageFromCloudinarySafely(
+  publicId: string | null | undefined,
+  target: CloudinaryTarget,
+) {
+  try {
+    await deleteImageFromCloudinary(publicId, target);
+  } catch (error) {
+    console.error(
+      `[Cloudinary] Failed to delete image "${publicId}" for ${target}:`,
+      error,
+    );
+  }
 }

@@ -1,10 +1,14 @@
 import { Context } from "hono";
 import { createSignedUploadParams } from "../../../utils/cloudinary";
 
-type UploadTarget = "absensi" | "dissemination_details";
+type UploadTarget = "absensi" | "attendance" | "dissemination_details";
 
 function isUploadTarget(value: unknown): value is UploadTarget {
-  return value === "absensi" || value === "dissemination_details";
+  return (
+    value === "absensi" ||
+    value === "attendance" ||
+    value === "dissemination_details"
+  );
 }
 
 export class UploadController {
