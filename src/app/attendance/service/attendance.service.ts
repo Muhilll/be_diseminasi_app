@@ -95,7 +95,7 @@ export class AttendanceService {
 
   static async getAll(userId: number, roleId: number) {
     const roleCode = await AttendanceReadRepository.getUserRoleCode(roleId);
-    const isAdmin = roleCode === "ADMIN";
+    const isAdmin = roleCode === "ADMIN" || roleCode === "RSC";
     const [rows, setting] = await Promise.all([
       AttendanceReadRepository.getAll(isAdmin ? undefined : userId),
       AttendanceSettingRepository.getSetting(),
