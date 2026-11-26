@@ -1,7 +1,7 @@
 import { v2 as cloudinary } from "cloudinary";
 
-type CloudinaryTarget = "dissemination_details" | "absensi";
-type CloudinaryFolder = "disseminations" | "absensi";
+type CloudinaryTarget = "dissemination_details" | "absensi" | "attendance";
+type CloudinaryFolder = "disseminations" | "absensi" | "attendance";
 
 function getCloudinaryUrl(target: CloudinaryTarget) {
   if (target === "dissemination_details") {
@@ -42,6 +42,10 @@ function configureCloudinary(target: CloudinaryTarget) {
 function getCloudinaryFolder(target: CloudinaryTarget): CloudinaryFolder {
   if (target === "dissemination_details") {
     return "disseminations";
+  }
+
+  if (target === "attendance") {
+    return "attendance";
   }
 
   return "absensi";

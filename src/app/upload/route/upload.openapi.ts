@@ -11,8 +11,8 @@ import { uploadSignatureResponseSchema } from "../../../docs/openapi-schemas";
 
 const uploadSignatureRequestSchema = z
   .object({
-    target: z.enum(["absensi", "dissemination_details"]).openapi({
-      example: "absensi",
+    target: z.enum(["absensi", "attendance", "dissemination_details"]).openapi({
+      example: "attendance",
     }),
   })
   .openapi("UploadSignatureRequest");
