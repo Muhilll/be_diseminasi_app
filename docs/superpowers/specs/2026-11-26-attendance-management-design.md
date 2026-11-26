@@ -102,10 +102,13 @@ Upgrade the existing `absensis` feature (which only records an uploaded image, d
    - Because `.env` points to the production MySQL database (with 691 existing `absensis` rows), **never run `db:seed`**.
    - Provide an idempotent migration/backfill script:
      1. Copy all `absensis` rows into `attendances` (`check_in_status = "legacy"`, `check_in_lat/lng = null`), keeping `absensis` table intact as backup.
-     2. Seed `attendance_settings` default row if empty.
-     3. Backfill `attendance_schedules` for all existing users (Mon–Fri `is_active: true`, Sat–Sun `is_active: false`) using `INSERT IGNORE` / existence check.
+     2. Seed `attendance_settings` default row if empty (e.g. `check_in_deadline: "21:00"`, `check_out_deadline: "17:00"`).
+     3. Backfill `attendance_schedules` for the 27 assigned members per the *Jadwal Membersihkan* roster:
+        - `Malam Senin` -> Sunday (`day_of_week = 0`), `Malam Selasa` -> Monday (`1`), `Malam Rabu` -> Tuesday (`2`), `Malam Kamis` -> Wednesday (`3`), `Malam Jumat` -> Thursday (`4`), `Malam Sabtu` -> Friday (`5`).
+        - Saturday (`day_of_week = 6`) -> `is_active = true` for all 27 members (*wajib bersama Sabtu sore*).
+        - `Said` (`id: 42`) and non-member/system accounts have all days `is_active = false` unless configured later.
      4. Upsert `Attendance Management` (`Settings`, `Schedule`, `Attendance`) menus and `role_permissions` without deleting existing menus/permissions.
-   - Update `UserService.createUser()` to automatically create the default 7-day schedule (Mon–Fri active, Sat–Sun inactive) for every newly created user.
+   - Update `UserService.createUser()` to automatically create a 7-day schedule for newly created users (Saturday `is_active: true`, or Mon–Fri `false` until configured, or configurable in Schedule).
 
 5. **Menus & RBAC (`src/db/seed.ts` + live migration)**:
    - Replace/remove `/absensis` menu entry and seed:
@@ -124,12 +127,14 @@ Upgrade the existing `absensis` feature (which only records an uploaded image, d
   - One check-in per user per `attendance_date` (reject duplicate with `400`).
   - Requires `latitude`, `longitude`, `image`, `image_public_id`.
   - If current local `HH:mm <= settings.check_in_deadline` -> `check_in_status = "on_time"`, else `"late"`.
-- **Check-Out Rules**:
-  - Requires an existing `attendances` row for `(user.id, today)` with `check_out_time === null` (reject if not checked in yet or already checked out).
-  - Requires `latitude`, `longitude`, `image`, `image_public_id`.
-  - If current local `HH:mm <= settings.check_out_deadline` -> `check_out_status = "on_time"`, else `"late_checkout"`.
+- **Check-Out Rules (Supports Same-Day & Overnight Shifts)**:
+  - If `settings.check_out_deadline <= settings.check_in_deadline` (e.g. `21:00` check-in -> `17:00` next day check-out), the shift is treated as **overnight**; otherwise **same-day**.
+  - `GET /api/attendances/today` and `POST /api/attendances/check-out` look for an open attendance (`check_out_time IS NULL`) for `today` OR (when overnight) `yesterday` whose check-out deadline (`attendance_date + 1 day` at `check_out_deadline`) has not yet been closed by a newer check-in.
+  - Rejects if no open check-in is found or already checked out.
+  - Requires `latitude`, `longitude`, `image`, `image_public_id` (and validates radius).
+  - Effective deadline timestamp: `attendance_date` (same-day) or `attendance_date + 1 day` (overnight) at `settings.check_out_deadline`. If current local time <= effective deadline -> `check_out_status = "on_time"`, else `"late_checkout"`.
 - **Computed `missed_checkout` Status**:
-  - In `AttendanceService` response mapping: if `row.check_out_time === null` and (`todayLocalDate > row.attendance_date` OR (`todayLocalDate === row.attendance_date` && `currentLocalHHmm > settings.check_out_deadline`)), return `check_out_status: "missed_checkout"` (and `status_summary` or separate fields).
+  - In `AttendanceService` response mapping: if `row.check_out_time === null` and `row.check_in_status !== "legacy"` and current local time is past the effective check-out deadline (`attendance_date` for same-day, or `attendance_date + 1 day` for overnight, at `settings.check_out_deadline`), return `check_out_status: "missed_checkout"`.
 - **Role Scoping**:
   - `GET /api/attendances`: Join `users` + `roles`. If `user.role_id` belongs to `ADMIN` role (`code === "ADMIN"`), return all users' records (with optional `?user_id=` / `?date=` filters); otherwise filter strictly by `attendances.user_id = jwtUser.id`.
   - `POST /api/attendances/check-in` and `POST /api/attendances/check-out`: Always derive `user_id` from the authenticated JWT (`c.get("user").id`), never trusting client `user_id`.
