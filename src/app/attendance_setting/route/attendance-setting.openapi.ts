@@ -29,9 +29,9 @@ export const attendanceSettingSchema = z
 const updateSettingSchema = z
   .object({
     location_name: z.string().min(1).max(150),
-    latitude: z.coerce.number().min(-90).max(90),
-    longitude: z.coerce.number().min(-180).max(180),
-    radius_meters: z.coerce.number().int().min(10).max(50000),
+    latitude: z.number().finite().min(-90).max(90),
+    longitude: z.number().finite().min(-180).max(180),
+    radius_meters: z.number().int().min(10).max(50000),
     check_in_deadline: z.string().regex(hhmmRegex, "Format must be HH:mm"),
     check_out_deadline: z.string().regex(hhmmRegex, "Format must be HH:mm"),
   })

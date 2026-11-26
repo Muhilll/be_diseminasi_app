@@ -1,4 +1,5 @@
 import { hash } from "bcryptjs";
+import { eq } from "drizzle-orm";
 import { attendance_schedules, db } from "../../../db";
 import {
   CreateUserRequestDto,
@@ -68,6 +69,7 @@ export class UserService {
       return null;
     }
 
+    await db.delete(attendance_schedules).where(eq(attendance_schedules.user_id, id));
     const result = await UserWriteRepository.deleteUser(id);
     return { user, result };
   }

@@ -15,8 +15,8 @@ const attendanceIdParamsSchema = createNumericPathParamsSchema("id");
 
 const checkInOutRequestSchema = z
   .object({
-    latitude: z.coerce.number().min(-90).max(90),
-    longitude: z.coerce.number().min(-180).max(180),
+    latitude: z.number().finite().min(-90).max(90),
+    longitude: z.number().finite().min(-180).max(180),
     image: z.string().min(1),
     image_public_id: z.string().min(1),
     note: z.string().optional(),
@@ -101,7 +101,7 @@ export const checkOutAttendanceRoute = createRoute({
   tags: ["Attendances"],
   summary: "Record attendance check-out",
   security: protectedSecurity,
-  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission()] as const,
+  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission("can_update")] as const,
   request: {
     body: {
       required: true,

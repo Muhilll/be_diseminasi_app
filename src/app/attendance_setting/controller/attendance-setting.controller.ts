@@ -34,7 +34,14 @@ export class AttendanceSettingController {
   static async update(c: Context) {
     try {
       const body = await c.req.json();
-      const updated = await AttendanceSettingRepository.upsertSetting(body);
+      const updated = await AttendanceSettingRepository.upsertSetting({
+        location_name: body.location_name,
+        latitude: body.latitude,
+        longitude: body.longitude,
+        radius_meters: body.radius_meters,
+        check_in_deadline: body.check_in_deadline,
+        check_out_deadline: body.check_out_deadline,
+      });
       return c.json({
         success: true,
         data: updated,

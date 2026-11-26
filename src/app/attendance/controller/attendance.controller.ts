@@ -50,7 +50,13 @@ export class AttendanceController {
     try {
       const user = c.get("user") as TokenPayload;
       const body = await c.req.json();
-      const result = await AttendanceService.checkIn(user.id, body);
+      const result = await AttendanceService.checkIn(user.id, {
+        latitude: body.latitude,
+        longitude: body.longitude,
+        image: body.image,
+        image_public_id: body.image_public_id,
+        note: body.note,
+      });
       return c.json(
         {
           success: true,
@@ -77,7 +83,13 @@ export class AttendanceController {
     try {
       const user = c.get("user") as TokenPayload;
       const body = await c.req.json();
-      const result = await AttendanceService.checkOut(user.id, body);
+      const result = await AttendanceService.checkOut(user.id, {
+        latitude: body.latitude,
+        longitude: body.longitude,
+        image: body.image,
+        image_public_id: body.image_public_id,
+        note: body.note,
+      });
       return c.json({
         success: true,
         data: result,

@@ -110,8 +110,7 @@ export class AttendanceService {
     );
   }
 
-  static async getTodayStatus(userId: number) {
-    const now = new Date();
+  static async getTodayStatus(userId: number, now: Date = new Date()) {
     const { date: todayDate, time: currentTime, dayOfWeek } = getLocalDateParts(now);
     const setting = await AttendanceSettingRepository.getSetting();
     const schedule = await AttendanceScheduleRepository.getScheduleByUserAndDay(
@@ -131,13 +130,25 @@ export class AttendanceService {
       datesToCheck,
     );
 
-    const todayRow = recentRows.find((r) => r.attendance_date === todayDate) ?? null;
+    const todayRow =
+      recentRows.find(
+        (r) => r.attendance_date === todayDate && r.check_in_status !== "legacy",
+      ) ?? null;
     const yesterdayOpenRow = overnight
       ? recentRows.find(
           (r) =>
             r.attendance_date === shiftDateString(todayDate, -1) &&
             r.check_out_time === null &&
-            r.check_in_status !== "legacy",
+            r.check_in_status !== "legacy" &&
+            computeEffectiveCheckOutStatus({
+              checkOutTime: r.check_out_time,
+              persistedCheckOutStatus: r.check_out_status,
+              attendanceDate: r.attendance_date,
+              checkInStatus: r.check_in_status,
+              checkInDeadline,
+              checkOutDeadline,
+              now,
+            }) === null,
         ) ?? null
       : null;
 
