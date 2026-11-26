@@ -1,4 +1,5 @@
 import { hash } from "bcryptjs";
+import { attendance_schedules, db } from "../../../db";
 import {
   CreateUserRequestDto,
   UpdateUserRequestDto,
@@ -28,6 +29,17 @@ export class UserService {
       ...payload,
       password: hashedPassword,
     });
+
+    const createdUser = await UserReadRepository.getUserByEmail(payload.email);
+    if (createdUser) {
+      await db.insert(attendance_schedules).values(
+        Array.from({ length: 7 }, (_, day) => ({
+          user_id: createdUser.id,
+          day_of_week: day,
+          is_active: day === 6,
+        })),
+      );
+    }
 
     return { conflict: false as const, result };
   }
