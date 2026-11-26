@@ -1,0 +1,253 @@
+import { afterEach, describe, expect, spyOn, test } from "bun:test";
+import { AttendanceScheduleRepository } from "../attendance_schedule/repository/attendance-schedule.repository";
+import { AttendanceSettingRepository } from "../attendance_setting/repository/attendance-setting.repository";
+import { AttendanceReadRepository } from "./repository/attendance-read.repository";
+import { AttendanceWriteRepository } from "./repository/attendance-write.repository";
+import {
+  AttendanceService,
+  AttendanceValidationError,
+  mapAttendanceResponse,
+} from "./service/attendance.service";
+
+const mockSetting = {
+  id: 1,
+  location_name: "Basecamp",
+  latitude: -5.147665,
+  longitude: 119.432732,
+  radius_meters: 100,
+  check_in_deadline: "21:00",
+  check_out_deadline: "17:00",
+  created_at: new Date(),
+  updated_at: new Date(),
+};
+
+const spies: Array<{ mockRestore: () => void }> = [];
+
+afterEach(() => {
+  while (spies.length > 0) {
+    spies.pop()?.mockRestore();
+  }
+});
+
+describe("AttendanceService", () => {
+  test("rejects check-in when user has no active schedule for today", async () => {
+    spies.push(
+      spyOn(AttendanceSettingRepository, "getSetting").mockResolvedValue(mockSetting),
+      spyOn(AttendanceScheduleRepository, "getScheduleByUserAndDay").mockResolvedValue({
+        id: 1,
+        user_id: 29,
+        day_of_week: 0,
+        is_active: false,
+        created_at: new Date(),
+        updated_at: new Date(),
+      }),
+    );
+
+    await expect(
+      AttendanceService.checkIn(
+        29,
+        {
+          latitude: -5.147665,
+          longitude: 119.432732,
+          image: "https://example.com/a.jpg",
+          image_public_id: "attendance/a",
+        },
+        new Date("2026-11-29T12:00:00.000Z"),
+      ),
+    ).rejects.toThrow(AttendanceValidationError);
+  });
+
+  test("rejects check-in when outside allowed radius", async () => {
+    spies.push(
+      spyOn(AttendanceSettingRepository, "getSetting").mockResolvedValue(mockSetting),
+      spyOn(AttendanceScheduleRepository, "getScheduleByUserAndDay").mockResolvedValue({
+        id: 1,
+        user_id: 29,
+        day_of_week: 0,
+        is_active: true,
+        created_at: new Date(),
+        updated_at: new Date(),
+      }),
+      spyOn(AttendanceReadRepository, "findByUserAndDates").mockResolvedValue([]),
+    );
+
+    await expect(
+      AttendanceService.checkIn(
+        29,
+        {
+          latitude: -5.16,
+          longitude: 119.45,
+          image: "https://example.com/a.jpg",
+          image_public_id: "attendance/a",
+        },
+        new Date("2026-11-29T12:00:00.000Z"),
+      ),
+    ).rejects.toThrow(/Outside allowed attendance radius/);
+  });
+
+  test("rejects duplicate check-in on same attendance_date", async () => {
+    spies.push(
+      spyOn(AttendanceSettingRepository, "getSetting").mockResolvedValue(mockSetting),
+      spyOn(AttendanceScheduleRepository, "getScheduleByUserAndDay").mockResolvedValue({
+        id: 1,
+        user_id: 29,
+        day_of_week: 0,
+        is_active: true,
+        created_at: new Date(),
+        updated_at: new Date(),
+      }),
+      spyOn(AttendanceReadRepository, "findByUserAndDates").mockResolvedValue([
+        {
+          id: 10,
+          user_id: 29,
+          attendance_date: "2026-11-29",
+          check_in_time: new Date("2026-11-29T12:00:00.000Z"),
+          check_in_lat: -5.147665,
+          check_in_lng: 119.432732,
+          check_in_image: "https://example.com/a.jpg",
+          check_in_image_public_id: "attendance/a",
+          check_in_note: null,
+          check_in_status: "on_time",
+          check_out_time: null,
+          check_out_lat: null,
+          check_out_lng: null,
+          check_out_image: null,
+          check_out_image_public_id: null,
+          check_out_note: null,
+          check_out_status: null,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+      ]),
+    );
+
+    await expect(
+      AttendanceService.checkIn(
+        29,
+        {
+          latitude: -5.147665,
+          longitude: 119.432732,
+          image: "https://example.com/b.jpg",
+          image_public_id: "attendance/b",
+        },
+        new Date("2026-11-29T12:30:00.000Z"),
+      ),
+    ).rejects.toThrow(/already checked in today/);
+  });
+
+  test("records late check-in when past check_in_deadline", async () => {
+    let capturedStatus = "";
+    spies.push(
+      spyOn(AttendanceSettingRepository, "getSetting").mockResolvedValue(mockSetting),
+      spyOn(AttendanceScheduleRepository, "getScheduleByUserAndDay").mockResolvedValue({
+        id: 1,
+        user_id: 29,
+        day_of_week: 0,
+        is_active: true,
+        created_at: new Date(),
+        updated_at: new Date(),
+      }),
+      spyOn(AttendanceReadRepository, "findByUserAndDates").mockResolvedValue([]),
+      spyOn(AttendanceWriteRepository, "createCheckIn").mockImplementation(async (data) => {
+        capturedStatus = data.check_in_status;
+        return {} as never;
+      }),
+    );
+
+    // 13:15Z = 21:15 WITA (> 21:00)
+    await AttendanceService.checkIn(
+      29,
+      {
+        latitude: -5.147665,
+        longitude: 119.432732,
+        image: "https://example.com/a.jpg",
+        image_public_id: "attendance/a",
+      },
+      new Date("2026-11-29T13:15:00.000Z"),
+    );
+
+    expect(capturedStatus).toBe("late");
+  });
+
+  test("allows overnight check-out on the next day against yesterday open check-in", async () => {
+    let updatedId = 0;
+    let capturedOutStatus = "";
+    spies.push(
+      spyOn(AttendanceSettingRepository, "getSetting").mockResolvedValue(mockSetting),
+      spyOn(AttendanceReadRepository, "findByUserAndDates").mockResolvedValue([
+        {
+          id: 55,
+          user_id: 29,
+          attendance_date: "2026-11-29",
+          check_in_time: new Date("2026-11-29T12:30:00.000Z"),
+          check_in_lat: -5.147665,
+          check_in_lng: 119.432732,
+          check_in_image: "https://example.com/a.jpg",
+          check_in_image_public_id: "attendance/a",
+          check_in_note: null,
+          check_in_status: "on_time",
+          check_out_time: null,
+          check_out_lat: null,
+          check_out_lng: null,
+          check_out_image: null,
+          check_out_image_public_id: null,
+          check_out_note: null,
+          check_out_status: null,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+      ]),
+      spyOn(AttendanceWriteRepository, "updateCheckOut").mockImplementation(async (id, data) => {
+        updatedId = id;
+        capturedOutStatus = data.check_out_status;
+        return {} as never;
+      }),
+    );
+
+    // Monday 2026-11-30 16:00 WITA = 08:00Z (before 17:00)
+    await AttendanceService.checkOut(
+      29,
+      {
+        latitude: -5.147665,
+        longitude: 119.432732,
+        image: "https://example.com/out.jpg",
+        image_public_id: "attendance/out",
+      },
+      new Date("2026-11-30T08:00:00.000Z"),
+    );
+
+    expect(updatedId).toBe(55);
+    expect(capturedOutStatus).toBe("on_time");
+  });
+
+  test("mapAttendanceResponse does not flag legacy rows as missed_checkout", () => {
+    const mapped = mapAttendanceResponse(
+      {
+        id: 1,
+        user_id: 29,
+        attendance_date: "2026-01-01",
+        check_in_time: new Date("2026-01-01T00:00:00.000Z"),
+        check_in_lat: null,
+        check_in_lng: null,
+        check_in_image: "https://example.com/old.jpg",
+        check_in_image_public_id: "absensi/old",
+        check_in_note: "old",
+        check_in_status: "legacy",
+        check_out_time: null,
+        check_out_lat: null,
+        check_out_lng: null,
+        check_out_image: null,
+        check_out_image_public_id: null,
+        check_out_note: null,
+        check_out_status: null,
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+      "21:00",
+      "17:00",
+      new Date("2026-11-30T10:00:00.000Z"),
+    );
+
+    expect(mapped.check_out_status).toBeNull();
+  });
+});

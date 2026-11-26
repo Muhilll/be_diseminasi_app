@@ -12,6 +12,7 @@ import rolePermissionRoutes from './app/role_permission/route/role-permission.ro
 import disseminationRoutes from './app/dissemination/route/dissemination.route';
 import disseminationDetailRoutes from './app/dissemination_detail/route/dissemination-detail.route';
 import absensiRoutes from './app/absensi/route/absensi.route';
+import attendanceRoutes from './app/attendance/route/attendance.route';
 import attendanceSettingRoutes from './app/attendance_setting/route/attendance-setting.route';
 import attendanceScheduleRoutes from './app/attendance_schedule/route/attendance-schedule.route';
 import uploadRoutes from './app/upload/route/upload.route';
@@ -92,6 +93,7 @@ app.route('/api/role-permissions', rolePermissionRoutes);
 app.route('/api/disseminations', disseminationRoutes);
 app.route('/api/dissemination-details', disseminationDetailRoutes);
 app.route('/api/absensis', absensiRoutes);
+app.route('/api/attendances', attendanceRoutes);
 app.route('/api/attendance-settings', attendanceSettingRoutes);
 app.route('/api/attendance-schedules', attendanceScheduleRoutes);
 app.route('/api/uploads', uploadRoutes);
