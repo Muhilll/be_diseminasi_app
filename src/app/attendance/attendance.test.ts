@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, spyOn, test } from "bun:test";
 import { AttendanceScheduleRepository } from "../attendance_schedule/repository/attendance-schedule.repository";
 import { AttendanceSettingRepository } from "../attendance_setting/repository/attendance-setting.repository";
+import { RolePermissionReadRepository } from "../role_permission/repository/role-permission-read.repository";
 import { AttendanceReadRepository } from "./repository/attendance-read.repository";
 import { AttendanceWriteRepository } from "./repository/attendance-write.repository";
 import {
@@ -294,5 +295,39 @@ describe("AttendanceService", () => {
     );
 
     expect(today.attendance).toBeNull();
+  });
+
+  test("getAll scopes by userId unless role has can_report on /api/attendances", async () => {
+    const calls: Array<number | undefined> = [];
+    spies.push(
+      spyOn(AttendanceSettingRepository, "getSetting").mockResolvedValue(mockSetting),
+      spyOn(AttendanceReadRepository, "getAll").mockImplementation(async (uid) => {
+        calls.push(uid);
+        return [];
+      }),
+      spyOn(
+        RolePermissionReadRepository,
+        "getPermissionByRoleIdAndPermissionPath",
+      )
+        .mockResolvedValueOnce({
+          can_read: true,
+          can_create: true,
+          can_update: true,
+          can_delete: false,
+          can_report: false,
+        })
+        .mockResolvedValueOnce({
+          can_read: true,
+          can_create: true,
+          can_update: true,
+          can_delete: true,
+          can_report: true,
+        }),
+    );
+
+    await AttendanceService.getAll(29, 6);
+    await AttendanceService.getAll(29, 4);
+
+    expect(calls).toEqual([29, undefined]);
   });
 });
