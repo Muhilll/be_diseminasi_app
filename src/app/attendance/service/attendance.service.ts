@@ -10,6 +10,7 @@ import {
 import { deleteImageFromCloudinarySafely } from "../../../utils/cloudinary";
 import { AttendanceScheduleRepository } from "../../attendance_schedule/repository/attendance-schedule.repository";
 import { AttendanceSettingRepository } from "../../attendance_setting/repository/attendance-setting.repository";
+import { RolePermissionReadRepository } from "../../role_permission/repository/role-permission-read.repository";
 import {
   AttendanceReadRepository,
   type AttendanceWithUserRow,
@@ -94,10 +95,14 @@ export class AttendanceService {
   }
 
   static async getAll(userId: number, roleId: number) {
-    const roleCode = await AttendanceReadRepository.getUserRoleCode(roleId);
-    const isAdmin = roleCode === "ADMIN";
+    const permission =
+      await RolePermissionReadRepository.getPermissionByRoleIdAndPermissionPath(
+        roleId,
+        "/api/attendances",
+      );
+    const canSeeAll = Boolean(permission?.can_report);
     const [rows, setting] = await Promise.all([
-      AttendanceReadRepository.getAll(isAdmin ? undefined : userId),
+      AttendanceReadRepository.getAll(canSeeAll ? undefined : userId),
       AttendanceSettingRepository.getSetting(),
     ]);
 
