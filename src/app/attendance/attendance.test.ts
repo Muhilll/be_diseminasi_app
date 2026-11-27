@@ -60,7 +60,10 @@ describe("AttendanceService", () => {
     ).rejects.toThrow(AttendanceValidationError);
   });
 
-  test("rejects check-in when outside allowed radius", async () => {
+  test("allows check-in and check-out outside radius with outside_radius / late_outside_radius status", async () => {
+    let createdStatus: string | null = null;
+    let updatedStatus: string | null = null;
+
     spies.push(
       spyOn(AttendanceSettingRepository, "getSetting").mockResolvedValue(mockSetting),
       spyOn(AttendanceScheduleRepository, "getScheduleByUserAndDay").mockResolvedValue({
@@ -71,21 +74,67 @@ describe("AttendanceService", () => {
         created_at: new Date(),
         updated_at: new Date(),
       }),
-      spyOn(AttendanceReadRepository, "findByUserAndDates").mockResolvedValue([]),
+      spyOn(AttendanceReadRepository, "findByUserAndDates")
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([
+          {
+            id: 99,
+            user_id: 29,
+            attendance_date: "2026-11-29",
+            check_in_time: new Date("2026-11-29T12:00:00.000Z"),
+            check_in_lat: -5.16,
+            check_in_lng: 119.45,
+            check_in_image: "https://example.com/a.jpg",
+            check_in_image_public_id: "attendance/a",
+            check_in_note: null,
+            check_in_status: "outside_radius",
+            check_out_time: null,
+            check_out_lat: null,
+            check_out_lng: null,
+            check_out_image: null,
+            check_out_image_public_id: null,
+            check_out_note: null,
+            check_out_status: null,
+            created_at: new Date(),
+            updated_at: new Date(),
+          },
+        ]),
+      spyOn(AttendanceWriteRepository, "createCheckIn").mockImplementation(async (data) => {
+        createdStatus = data.check_in_status;
+        return {} as any;
+      }),
+      spyOn(AttendanceLeaveRepository, "autoCancelPendingOnCheckIn").mockResolvedValue(
+        undefined as any,
+      ),
+      spyOn(AttendanceWriteRepository, "updateCheckOut").mockImplementation(async (_id, data) => {
+        updatedStatus = data.check_out_status;
+        return {} as any;
+      }),
     );
 
-    await expect(
-      AttendanceService.checkIn(
-        29,
-        {
-          latitude: -5.16,
-          longitude: 119.45,
-          image: "https://example.com/a.jpg",
-          image_public_id: "attendance/a",
-        },
-        new Date("2026-11-29T12:00:00.000Z"),
-      ),
-    ).rejects.toThrow(/Outside allowed attendance radius/);
+    await AttendanceService.checkIn(
+      29,
+      {
+        latitude: -5.16,
+        longitude: 119.45,
+        image: "https://example.com/a.jpg",
+        image_public_id: "attendance/a",
+      },
+      new Date("2026-11-29T12:00:00.000Z"), // 20:00 WITA (on time, outside radius)
+    );
+    await AttendanceService.checkOut(
+      29,
+      {
+        latitude: -5.16,
+        longitude: 119.45,
+        image: "https://example.com/b.jpg",
+        image_public_id: "attendance/b",
+      },
+      new Date("2026-11-30T11:00:00.000Z"), // 19:00 WITA next day (late checkout, outside radius)
+    );
+
+    expect(createdStatus).toBe("outside_radius");
+    expect(updatedStatus).toBe("late_outside_radius");
   });
 
   test("rejects duplicate check-in on same attendance_date", async () => {
