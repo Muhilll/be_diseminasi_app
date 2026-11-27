@@ -48,6 +48,18 @@ export class AttendanceScheduleController {
     try {
       const userId = Number(c.req.param("userId"));
       const body = await c.req.json();
+      const activeCount = Array.isArray(body.schedules)
+        ? body.schedules.filter((s: { is_active?: boolean }) => s.is_active).length
+        : 0;
+      if (activeCount > 1) {
+        return c.json(
+          {
+            success: false,
+            message: "Setiap user hanya boleh memiliki maksimal 1 jadwal aktif",
+          },
+          400,
+        );
+      }
       const updated = await AttendanceScheduleRepository.upsertUserSchedule(
         userId,
         body.schedules,

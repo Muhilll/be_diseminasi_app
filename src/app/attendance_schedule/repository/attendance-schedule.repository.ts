@@ -142,6 +142,13 @@ export class AttendanceScheduleRepository {
     if (existingUser.length === 0) return null;
 
     await db.transaction(async (tx) => {
+      if (schedules.some((s) => s.is_active)) {
+        await tx
+          .update(attendance_schedules)
+          .set({ is_active: false, updated_at: new Date() })
+          .where(eq(attendance_schedules.user_id, userId));
+      }
+
       for (const item of schedules) {
         const existing = await tx
           .select({ id: attendance_schedules.id })
