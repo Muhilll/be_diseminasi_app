@@ -124,7 +124,7 @@ export function computeEffectiveCheckOutStatus(params: {
     return params.persistedCheckOutStatus;
   }
 
-  if (params.checkInStatus === "legacy") {
+  if (params.checkInStatus === "legacy" || params.checkInStatus === "izin") {
     return null;
   }
 

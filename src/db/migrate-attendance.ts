@@ -15,8 +15,7 @@ import { getLocalDateParts } from "../utils/attendance";
 
 // Roster from "Jadwal Membersihkan":
 // Malam Senin (0=Sun), Malam Selasa (1=Mon), Malam Rabu (2=Tue),
-// Malam Kamis (3=Wed), Malam Jumat (4=Thu), Malam Sabtu (5=Fri),
-// plus Saturday (6=Sat) active for all 27 assigned members.
+// Malam Kamis (3=Wed), Malam Jumat (4=Thu), Malam Sabtu (5=Fri).
 const CLEANING_DAY_BY_USER_ID: Record<number, number> = {
   // Malam Senin (Sunday)
   64: 0, // Fatih Maulana
@@ -177,7 +176,7 @@ async function backfillSchedules() {
 
     for (let day = 0; day <= 6; day++) {
       if (existingKeys.has(`${u.id}:${day}`)) continue;
-      const isActive = isRosterMember && (day === assignedDay || day === 6);
+      const isActive = isRosterMember && day === assignedDay;
       toInsert.push({ user_id: u.id, day_of_week: day, is_active: isActive });
     }
   }

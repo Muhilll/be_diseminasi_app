@@ -79,6 +79,20 @@ describe("attendance utilities", () => {
       }),
     ).toBeNull();
 
+    // Approved leave ("izin") with null check_out_time is never missed_checkout
+    expect(
+      computeEffectiveCheckOutStatus({
+        checkOutTime: null,
+        persistedCheckOutStatus: null,
+        attendanceDate: "2026-11-29",
+        checkInStatus: "izin",
+        checkInDeadline: "21:00",
+        checkOutDeadline: "17:00",
+        now: new Date("2026-11-30T10:00:00.000Z"),
+        timeZone: "Asia/Makassar",
+      }),
+    ).toBeNull();
+
     // Overnight 2026-11-29 at 2026-11-30 16:59 WITA (08:59Z) -> still open (null)
     expect(
       computeEffectiveCheckOutStatus({

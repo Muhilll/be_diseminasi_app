@@ -12,6 +12,23 @@ import {
 } from "../../../docs/openapi-common";
 
 const attendanceIdParamsSchema = createNumericPathParamsSchema("id");
+const leaveIdParamsSchema = createNumericPathParamsSchema("id");
+
+const createLeaveRequestSchema = z
+  .object({
+    leave_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Format must be YYYY-MM-DD"),
+    reason: z.string().min(1),
+    attachment: z.string().min(1).optional(),
+    attachment_public_id: z.string().min(1).optional(),
+  })
+  .openapi("AttendanceLeaveCreateRequest");
+
+const reviewLeaveRequestSchema = z
+  .object({
+    action: z.enum(["approve", "reject"]),
+    review_note: z.string().optional(),
+  })
+  .openapi("AttendanceLeaveReviewRequest");
 
 const checkInOutRequestSchema = z
   .object({
@@ -130,6 +147,67 @@ export const deleteAttendanceRoute = createRoute({
     401: jsonResponse(apiErrorResponseSchema, "Unauthorized"),
     403: jsonResponse(apiErrorResponseSchema, "Forbidden"),
     404: jsonResponse(apiErrorResponseSchema, "Attendance not found"),
+    500: jsonResponse(apiErrorResponseSchema, "Internal server error"),
+  },
+});
+
+export const getAllAttendanceLeavesRoute = createRoute({
+  method: "get",
+  path: "/leaves",
+  tags: ["Attendances"],
+  summary: "Get attendance leave requests (can_report: all, else own)",
+  security: protectedSecurity,
+  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission("can_read")] as const,
+  responses: {
+    200: jsonResponse(listResponseSchema, "Leave requests fetched successfully"),
+    401: jsonResponse(apiErrorResponseSchema, "Unauthorized"),
+    403: jsonResponse(apiErrorResponseSchema, "Forbidden"),
+    500: jsonResponse(apiErrorResponseSchema, "Internal server error"),
+  },
+});
+
+export const createAttendanceLeaveRoute = createRoute({
+  method: "post",
+  path: "/leaves",
+  tags: ["Attendances"],
+  summary: "Submit attendance leave request (Izin)",
+  security: protectedSecurity,
+  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission("can_create")] as const,
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: createLeaveRequestSchema } },
+    },
+  },
+  responses: {
+    201: jsonResponse(mutationResponseSchema, "Leave request submitted successfully"),
+    400: jsonResponse(apiErrorResponseSchema, "Validation or schedule error"),
+    401: jsonResponse(apiErrorResponseSchema, "Unauthorized"),
+    403: jsonResponse(apiErrorResponseSchema, "Forbidden"),
+    500: jsonResponse(apiErrorResponseSchema, "Internal server error"),
+  },
+});
+
+export const reviewAttendanceLeaveRoute = createRoute({
+  method: "patch",
+  path: "/leaves/{id}/review",
+  tags: ["Attendances"],
+  summary: "Approve or reject a pending leave request",
+  security: protectedSecurity,
+  middleware: [jwtMiddleware, appTokenMiddleware, requirePermission("can_report")] as const,
+  request: {
+    params: leaveIdParamsSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: reviewLeaveRequestSchema } },
+    },
+  },
+  responses: {
+    200: jsonResponse(mutationResponseSchema, "Leave request reviewed successfully"),
+    400: jsonResponse(apiErrorResponseSchema, "Validation error"),
+    401: jsonResponse(apiErrorResponseSchema, "Unauthorized"),
+    403: jsonResponse(apiErrorResponseSchema, "Forbidden"),
+    404: jsonResponse(apiErrorResponseSchema, "Leave request not found"),
     500: jsonResponse(apiErrorResponseSchema, "Internal server error"),
   },
 });

@@ -260,3 +260,36 @@ export const attendances = mysqlTable(
     ),
   }),
 );
+
+// Attendance Leaves Table (Izin requests with Approve/Reject workflow)
+export const attendance_leaves = mysqlTable(
+  "attendance_leaves",
+  {
+    id: int().primaryKey().autoincrement(),
+    user_id: int().notNull(),
+    leave_date: varchar({ length: 10 }).notNull(), // YYYY-MM-DD in APP_TIMEZONE
+    reason: text().notNull(),
+    attachment: varchar({ length: 255 }),
+    attachment_public_id: varchar({ length: 255 }),
+    status: varchar({ length: 20 }).notNull().default("pending"), // 'pending' | 'approved' | 'rejected'
+    reviewed_by: int(),
+    reviewed_at: datetime(),
+    review_note: text(),
+    created_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
+    updated_at: datetime().default(sql`CURRENT_TIMESTAMP`).notNull(),
+  },
+  (table) => ({
+    user_fk: foreignKey({
+      columns: [table.user_id],
+      foreignColumns: [users.id],
+    }),
+    reviewer_fk: foreignKey({
+      columns: [table.reviewed_by],
+      foreignColumns: [users.id],
+    }),
+    user_date_idx: index("attendance_leaves_user_date_idx").on(
+      table.user_id,
+      table.leave_date,
+    ),
+  }),
+);
