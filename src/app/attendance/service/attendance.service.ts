@@ -116,13 +116,68 @@ export class AttendanceService {
     );
   }
 
-  static async getTodayStatus(userId: number, now: Date = new Date()) {
-    const { date: todayDate, time: currentTime, dayOfWeek } = getLocalDateParts(now);
-    const setting = await AttendanceSettingRepository.getSetting();
-    const schedule = await AttendanceScheduleRepository.getScheduleByUserAndDay(
+  private static async resolveCheckInTarget(
+    userId: number,
+    now: Date,
+    checkInDeadline: string,
+    checkOutDeadline: string,
+  ): Promise<{
+    attendanceDate: string;
+    isOvernightCarryover: boolean;
+    todayScheduleActive: boolean;
+  }> {
+    const { date: todayDate, dayOfWeek } = getLocalDateParts(now);
+    const todaySchedule = await AttendanceScheduleRepository.getScheduleByUserAndDay(
       userId,
       dayOfWeek,
     );
+
+    if (todaySchedule?.is_active) {
+      return {
+        attendanceDate: todayDate,
+        isOvernightCarryover: false,
+        todayScheduleActive: true,
+      };
+    }
+
+    if (isOvernightShift(checkInDeadline, checkOutDeadline)) {
+      const yesterdayDate = shiftDateString(todayDate, -1);
+      const yesterdayDay = (dayOfWeek + 6) % 7;
+      const yesterdaySchedule =
+        await AttendanceScheduleRepository.getScheduleByUserAndDay(
+          userId,
+          yesterdayDay,
+        );
+
+      if (yesterdaySchedule?.is_active) {
+        const yesterdayRows = await AttendanceReadRepository.findByUserAndDates(
+          userId,
+          [yesterdayDate],
+        );
+        const hasYesterdayAttendance = yesterdayRows.some(
+          (r) => r.check_in_status !== "legacy",
+        );
+
+        if (!hasYesterdayAttendance) {
+          return {
+            attendanceDate: yesterdayDate,
+            isOvernightCarryover: true,
+            todayScheduleActive: false,
+          };
+        }
+      }
+    }
+
+    return {
+      attendanceDate: "",
+      isOvernightCarryover: false,
+      todayScheduleActive: false,
+    };
+  }
+
+  static async getTodayStatus(userId: number, now: Date = new Date()) {
+    const { date: todayDate, time: currentTime, dayOfWeek } = getLocalDateParts(now);
+    const setting = await AttendanceSettingRepository.getSetting();
 
     const checkInDeadline = setting?.check_in_deadline ?? "21:00";
     const checkOutDeadline = setting?.check_out_deadline ?? "17:00";
@@ -131,14 +186,16 @@ export class AttendanceService {
       ? [todayDate, shiftDateString(todayDate, -1)]
       : [todayDate];
 
-    const recentRows = await AttendanceReadRepository.findByUserAndDates(
-      userId,
-      datesToCheck,
-    );
-    const todayLeaves = await AttendanceLeaveRepository.findByUserAndDate(
-      userId,
-      todayDate,
-    );
+    const [recentRows, todayLeaves, target] = await Promise.all([
+      AttendanceReadRepository.findByUserAndDates(userId, datesToCheck),
+      AttendanceLeaveRepository.findByUserAndDate(userId, todayDate),
+      AttendanceService.resolveCheckInTarget(
+        userId,
+        now,
+        checkInDeadline,
+        checkOutDeadline,
+      ),
+    ]);
     const todayLeave = todayLeaves[0] ?? null;
 
     const todayRow =
@@ -169,12 +226,26 @@ export class AttendanceService {
         ? todayRow
         : yesterdayOpenRow ?? todayRow;
 
+    const targetHasAttendance =
+      !!target.attendanceDate &&
+      recentRows.some(
+        (r) =>
+          r.attendance_date === target.attendanceDate &&
+          r.check_in_status !== "legacy",
+      );
+
     return {
       server_time: currentTime,
       today_date: todayDate,
       day_of_week: dayOfWeek,
       settings: setting,
-      schedule: schedule ?? { user_id: userId, day_of_week: dayOfWeek, is_active: false },
+      schedule: {
+        user_id: userId,
+        day_of_week: dayOfWeek,
+        is_active: target.todayScheduleActive,
+      },
+      can_check_in: Boolean(target.attendanceDate && !targetHasAttendance),
+      check_in_target_date: target.attendanceDate || null,
       today_leave: todayLeave,
       attendance: activeRow
         ? mapAttendanceResponse(activeRow, checkInDeadline, checkOutDeadline, now)
@@ -184,20 +255,25 @@ export class AttendanceService {
 
   static async checkIn(userId: number, payload: CheckInOutPayload, now = new Date()) {
     const setting = await AttendanceService.requireSetting();
-    const { date: todayDate, time: currentTime, dayOfWeek } = getLocalDateParts(now);
+    const { time: currentTime } = getLocalDateParts(now);
 
-    const schedule = await AttendanceScheduleRepository.getScheduleByUserAndDay(
+    const target = await AttendanceService.resolveCheckInTarget(
       userId,
-      dayOfWeek,
+      now,
+      setting.check_in_deadline,
+      setting.check_out_deadline,
     );
-    if (!schedule || !schedule.is_active) {
+    if (!target.attendanceDate) {
       throw new AttendanceValidationError("No active schedule for today", 400);
     }
 
-    const existingToday = await AttendanceReadRepository.findByUserAndDates(userId, [
-      todayDate,
-    ]);
-    const existingNonLegacy = existingToday.find((r) => r.check_in_status !== "legacy");
+    const existingTargetRows = await AttendanceReadRepository.findByUserAndDates(
+      userId,
+      [target.attendanceDate],
+    );
+    const existingNonLegacy = existingTargetRows.find(
+      (r) => r.check_in_status !== "legacy",
+    );
     if (existingNonLegacy) {
       throw new AttendanceValidationError(
         existingNonLegacy.check_in_status === "izin"
@@ -220,10 +296,12 @@ export class AttendanceService {
       );
     }
 
-    const checkInStatus = computeCheckInStatus(currentTime, setting.check_in_deadline);
+    const checkInStatus = target.isOvernightCarryover
+      ? "late"
+      : computeCheckInStatus(currentTime, setting.check_in_deadline);
     const result = await AttendanceWriteRepository.createCheckIn({
       user_id: userId,
-      attendance_date: todayDate,
+      attendance_date: target.attendanceDate,
       check_in_time: now,
       check_in_lat: payload.latitude,
       check_in_lng: payload.longitude,
@@ -235,7 +313,7 @@ export class AttendanceService {
 
     await AttendanceLeaveRepository.autoCancelPendingOnCheckIn(
       userId,
-      todayDate,
+      target.attendanceDate,
       now,
     );
 

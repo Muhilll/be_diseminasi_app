@@ -481,4 +481,61 @@ describe("AttendanceLeaveService", () => {
     await AttendanceService.deleteById(77);
     expect(deletedLeaveArgs).toEqual([[29, "2026-11-29"]]);
   });
+
+  test("allows overnight late check-in on Monday when Sunday was active and Monday is inactive, but rejects on Tuesday", async () => {
+    let capturedDate = "";
+    let capturedStatus = "";
+
+    spies.push(
+      spyOn(AttendanceSettingRepository, "getSetting").mockResolvedValue(mockSetting),
+      spyOn(AttendanceScheduleRepository, "getScheduleByUserAndDay").mockImplementation(
+        async (_uid, day) => ({
+          id: 1,
+          user_id: 29,
+          day_of_week: day,
+          is_active: day === 0, // Only Sunday active
+          created_at: new Date(),
+          updated_at: new Date(),
+        }),
+      ),
+      spyOn(AttendanceReadRepository, "findByUserAndDates").mockResolvedValue([]),
+      spyOn(AttendanceWriteRepository, "createCheckIn").mockImplementation(async (data) => {
+        capturedDate = data.attendance_date;
+        capturedStatus = data.check_in_status;
+        return {} as never;
+      }),
+      spyOn(AttendanceLeaveRepository, "autoCancelPendingOnCheckIn").mockResolvedValue(
+        {} as never,
+      ),
+    );
+
+    // Monday 2026-11-30 01:00 WITA (2026-11-29T17:00:00Z) -> allowed as late for Sunday 2026-11-29
+    await AttendanceService.checkIn(
+      29,
+      {
+        latitude: -5.147665,
+        longitude: 119.432732,
+        image: "https://example.com/a.jpg",
+        image_public_id: "attendance/a",
+      },
+      new Date("2026-11-29T17:00:00.000Z"),
+    );
+
+    expect(capturedDate).toBe("2026-11-29");
+    expect(capturedStatus).toBe("late");
+
+    // Tuesday 2026-12-01 00:00 WITA (2026-11-30T16:00:00Z) -> rejected
+    await expect(
+      AttendanceService.checkIn(
+        29,
+        {
+          latitude: -5.147665,
+          longitude: 119.432732,
+          image: "https://example.com/b.jpg",
+          image_public_id: "attendance/b",
+        },
+        new Date("2026-11-30T16:00:00.000Z"),
+      ),
+    ).rejects.toThrow(/No active schedule/);
+  });
 });
