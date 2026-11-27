@@ -283,16 +283,16 @@ export class AttendanceService {
       setting.latitude,
       setting.longitude,
     );
-    if (distance > setting.radius_meters) {
-      throw new AttendanceValidationError(
-        `Outside allowed attendance radius (${Math.round(distance)}m > ${setting.radius_meters}m)`,
-        400,
-      );
-    }
+    const isOutsideRadius = distance > setting.radius_meters;
 
-    const checkInStatus = target.isOvernightCarryover
+    const baseCheckInStatus = target.isOvernightCarryover
       ? "late"
       : computeCheckInStatus(currentTime, setting.check_in_deadline);
+    const checkInStatus = isOutsideRadius
+      ? baseCheckInStatus === "late"
+        ? "late_outside_radius"
+        : "outside_radius"
+      : baseCheckInStatus;
     const result = await AttendanceWriteRepository.createCheckIn({
       user_id: userId,
       attendance_date: target.attendanceDate,
@@ -351,19 +351,19 @@ export class AttendanceService {
       setting.latitude,
       setting.longitude,
     );
-    if (distance > setting.radius_meters) {
-      throw new AttendanceValidationError(
-        `Outside allowed attendance radius (${Math.round(distance)}m > ${setting.radius_meters}m)`,
-        400,
-      );
-    }
+    const isOutsideRadius = distance > setting.radius_meters;
 
-    const checkOutStatus = computeCheckOutSubmissionStatus({
+    const baseCheckOutStatus = computeCheckOutSubmissionStatus({
       attendanceDate: openRow.attendance_date,
       checkInDeadline: setting.check_in_deadline,
       checkOutDeadline: setting.check_out_deadline,
       now,
     });
+    const checkOutStatus = isOutsideRadius
+      ? baseCheckOutStatus === "late_checkout"
+        ? "late_outside_radius"
+        : "outside_radius"
+      : baseCheckOutStatus;
 
     return AttendanceWriteRepository.updateCheckOut(openRow.id, {
       check_out_time: now,

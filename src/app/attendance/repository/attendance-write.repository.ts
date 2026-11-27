@@ -10,7 +10,7 @@ export type CreateAttendanceCheckInData = {
   check_in_image: string;
   check_in_image_public_id: string;
   check_in_note?: string | null;
-  check_in_status: "on_time" | "late";
+  check_in_status: "on_time" | "late" | "outside_radius" | "late_outside_radius";
 };
 
 export type UpdateAttendanceCheckOutData = {
@@ -20,7 +20,7 @@ export type UpdateAttendanceCheckOutData = {
   check_out_image: string;
   check_out_image_public_id: string;
   check_out_note?: string | null;
-  check_out_status: "on_time" | "late_checkout";
+  check_out_status: "on_time" | "late_checkout" | "outside_radius" | "late_outside_radius";
 };
 
 export class AttendanceWriteRepository {
