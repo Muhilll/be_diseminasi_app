@@ -441,7 +441,7 @@ describe("AttendanceLeaveService", () => {
   });
 
   test("deleteById on izin attendance deletes linked approved leave", async () => {
-    let deletedLeaveArgs: [number, string] | null = null;
+    const deletedLeaveArgs: Array<[number, string]> = [];
     spies.push(
       spyOn(AttendanceReadRepository, "getById").mockResolvedValue({
         id: 77,
@@ -472,13 +472,13 @@ describe("AttendanceLeaveService", () => {
         AttendanceLeaveRepository,
         "deleteApprovedForAttendance",
       ).mockImplementation(async (uid, date) => {
-        deletedLeaveArgs = [uid, date];
+        deletedLeaveArgs.push([uid, date]);
         return {} as never;
       }),
       spyOn(AttendanceWriteRepository, "deleteById").mockResolvedValue({} as never),
     );
 
     await AttendanceService.deleteById(77);
-    expect(deletedLeaveArgs).toEqual([29, "2026-11-29"]);
+    expect(deletedLeaveArgs).toEqual([[29, "2026-11-29"]]);
   });
 });
