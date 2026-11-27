@@ -2,8 +2,10 @@ import { afterEach, describe, expect, spyOn, test } from "bun:test";
 import { AttendanceScheduleRepository } from "../attendance_schedule/repository/attendance-schedule.repository";
 import { AttendanceSettingRepository } from "../attendance_setting/repository/attendance-setting.repository";
 import { RolePermissionReadRepository } from "../role_permission/repository/role-permission-read.repository";
+import { AttendanceLeaveRepository } from "./repository/attendance-leave.repository";
 import { AttendanceReadRepository } from "./repository/attendance-read.repository";
 import { AttendanceWriteRepository } from "./repository/attendance-write.repository";
+import { AttendanceLeaveService } from "./service/attendance-leave.service";
 import {
   AttendanceService,
   AttendanceValidationError,
@@ -153,6 +155,9 @@ describe("AttendanceService", () => {
         capturedStatus = data.check_in_status;
         return {} as never;
       }),
+      spyOn(AttendanceLeaveRepository, "autoCancelPendingOnCheckIn").mockResolvedValue(
+        {} as never,
+      ),
     );
 
     // 13:15Z = 21:15 WITA (> 21:00)
@@ -263,6 +268,7 @@ describe("AttendanceService", () => {
         created_at: new Date(),
         updated_at: new Date(),
       }),
+      spyOn(AttendanceLeaveRepository, "findByUserAndDate").mockResolvedValue([]),
       spyOn(AttendanceReadRepository, "findByUserAndDates").mockResolvedValue([
         {
           id: 55,
@@ -329,5 +335,150 @@ describe("AttendanceService", () => {
     await AttendanceService.getAll(29, 4);
 
     expect(calls).toEqual([29, undefined]);
+  });
+});
+
+describe("AttendanceLeaveService", () => {
+  test("rejects submitLeave for past date or inactive schedule day", async () => {
+    await expect(
+      AttendanceLeaveService.submitLeave(
+        29,
+        { leave_date: "2026-11-28", reason: "Sakit" },
+        new Date("2026-11-29T10:00:00.000Z"),
+      ),
+    ).rejects.toThrow(/past/);
+
+    spies.push(
+      spyOn(AttendanceScheduleRepository, "getScheduleByUserAndDay").mockResolvedValue({
+        id: 1,
+        user_id: 29,
+        day_of_week: 0,
+        is_active: false,
+        created_at: new Date(),
+        updated_at: new Date(),
+      }),
+    );
+
+    await expect(
+      AttendanceLeaveService.submitLeave(
+        29,
+        { leave_date: "2026-11-29", reason: "Sakit" },
+        new Date("2026-11-29T10:00:00.000Z"),
+      ),
+    ).rejects.toThrow(/No active schedule/);
+  });
+
+  test("rejects duplicate pending/approved leave on the same date", async () => {
+    spies.push(
+      spyOn(AttendanceScheduleRepository, "getScheduleByUserAndDay").mockResolvedValue({
+        id: 1,
+        user_id: 29,
+        day_of_week: 0,
+        is_active: true,
+        created_at: new Date(),
+        updated_at: new Date(),
+      }),
+      spyOn(AttendanceLeaveRepository, "findByUserAndDate").mockResolvedValue([
+        {
+          id: 1,
+          user_id: 29,
+          leave_date: "2026-11-29",
+          reason: "Acara keluarga",
+          attachment: null,
+          attachment_public_id: null,
+          status: "pending",
+          reviewed_by: null,
+          reviewed_at: null,
+          review_note: null,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+      ]),
+    );
+
+    await expect(
+      AttendanceLeaveService.submitLeave(
+        29,
+        { leave_date: "2026-11-29", reason: "Sakit" },
+        new Date("2026-11-29T10:00:00.000Z"),
+      ),
+    ).rejects.toThrow(/already exists/);
+  });
+
+  test("reviewLeave approve inserts izin attendance in transaction", async () => {
+    let approvedLeaveId = 0;
+    spies.push(
+      spyOn(AttendanceLeaveRepository, "getById").mockResolvedValue({
+        id: 12,
+        user_id: 29,
+        leave_date: "2026-11-29",
+        reason: "Sakit demam",
+        attachment: null,
+        attachment_public_id: null,
+        status: "pending",
+        reviewed_by: null,
+        reviewed_at: null,
+        review_note: null,
+        created_at: new Date(),
+        updated_at: new Date(),
+      }),
+      spyOn(AttendanceReadRepository, "findByUserAndDates").mockResolvedValue([]),
+      spyOn(
+        AttendanceLeaveRepository,
+        "approveAndInsertAttendance",
+      ).mockImplementation(async (params) => {
+        approvedLeaveId = params.leave.id;
+        return {} as never;
+      }),
+    );
+
+    await AttendanceLeaveService.reviewLeave(12, 3, {
+      action: "approve",
+      review_note: "Cepat sembuh",
+    });
+
+    expect(approvedLeaveId).toBe(12);
+  });
+
+  test("deleteById on izin attendance deletes linked approved leave", async () => {
+    let deletedLeaveArgs: [number, string] | null = null;
+    spies.push(
+      spyOn(AttendanceReadRepository, "getById").mockResolvedValue({
+        id: 77,
+        user_id: 29,
+        attendance_date: "2026-11-29",
+        check_in_time: new Date(),
+        check_in_lat: null,
+        check_in_lng: null,
+        check_in_image: "",
+        check_in_image_public_id: "",
+        check_in_note: "Sakit",
+        check_in_status: "izin",
+        check_out_time: null,
+        check_out_lat: null,
+        check_out_lng: null,
+        check_out_image: null,
+        check_out_image_public_id: null,
+        check_out_note: null,
+        check_out_status: null,
+        created_at: new Date(),
+        updated_at: new Date(),
+        user_name: "Maudy",
+        user_email: "aprilamaudy@gmail.com",
+        user_employee_id: "APRIL-001",
+        role_code: "USER",
+      }),
+      spyOn(
+        AttendanceLeaveRepository,
+        "deleteApprovedForAttendance",
+      ).mockImplementation(async (uid, date) => {
+        deletedLeaveArgs = [uid, date];
+        return {} as never;
+      }),
+      spyOn(AttendanceWriteRepository, "deleteById").mockResolvedValue({} as never),
+    );
+
+    await AttendanceService.deleteById(77);
+    expect(deletedLeaveArgs).toEqual([29, "2026-11-29"]);
   });
 });

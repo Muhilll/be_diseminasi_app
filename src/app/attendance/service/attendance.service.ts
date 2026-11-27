@@ -11,6 +11,7 @@ import { deleteImageFromCloudinarySafely } from "../../../utils/cloudinary";
 import { AttendanceScheduleRepository } from "../../attendance_schedule/repository/attendance-schedule.repository";
 import { AttendanceSettingRepository } from "../../attendance_setting/repository/attendance-setting.repository";
 import { RolePermissionReadRepository } from "../../role_permission/repository/role-permission-read.repository";
+import { AttendanceLeaveRepository } from "../repository/attendance-leave.repository";
 import {
   AttendanceReadRepository,
   type AttendanceWithUserRow,
@@ -134,6 +135,11 @@ export class AttendanceService {
       userId,
       datesToCheck,
     );
+    const todayLeaves = await AttendanceLeaveRepository.findByUserAndDate(
+      userId,
+      todayDate,
+    );
+    const todayLeave = todayLeaves[0] ?? null;
 
     const todayRow =
       recentRows.find(
@@ -145,6 +151,7 @@ export class AttendanceService {
             r.attendance_date === shiftDateString(todayDate, -1) &&
             r.check_out_time === null &&
             r.check_in_status !== "legacy" &&
+            r.check_in_status !== "izin" &&
             computeEffectiveCheckOutStatus({
               checkOutTime: r.check_out_time,
               persistedCheckOutStatus: r.check_out_status,
@@ -168,6 +175,7 @@ export class AttendanceService {
       day_of_week: dayOfWeek,
       settings: setting,
       schedule: schedule ?? { user_id: userId, day_of_week: dayOfWeek, is_active: false },
+      today_leave: todayLeave,
       attendance: activeRow
         ? mapAttendanceResponse(activeRow, checkInDeadline, checkOutDeadline, now)
         : null,
@@ -189,8 +197,14 @@ export class AttendanceService {
     const existingToday = await AttendanceReadRepository.findByUserAndDates(userId, [
       todayDate,
     ]);
-    if (existingToday.some((r) => r.check_in_status !== "legacy")) {
-      throw new AttendanceValidationError("You have already checked in today", 400);
+    const existingNonLegacy = existingToday.find((r) => r.check_in_status !== "legacy");
+    if (existingNonLegacy) {
+      throw new AttendanceValidationError(
+        existingNonLegacy.check_in_status === "izin"
+          ? "You have an approved leave for today"
+          : "You have already checked in today",
+        400,
+      );
     }
 
     const distance = calculateDistanceMeters(
@@ -207,7 +221,7 @@ export class AttendanceService {
     }
 
     const checkInStatus = computeCheckInStatus(currentTime, setting.check_in_deadline);
-    return AttendanceWriteRepository.createCheckIn({
+    const result = await AttendanceWriteRepository.createCheckIn({
       user_id: userId,
       attendance_date: todayDate,
       check_in_time: now,
@@ -218,6 +232,14 @@ export class AttendanceService {
       check_in_note: payload.note ?? null,
       check_in_status: checkInStatus,
     });
+
+    await AttendanceLeaveRepository.autoCancelPendingOnCheckIn(
+      userId,
+      todayDate,
+      now,
+    );
+
+    return result;
   }
 
   static async checkOut(userId: number, payload: CheckInOutPayload, now = new Date()) {
@@ -238,7 +260,10 @@ export class AttendanceService {
     );
 
     const openRow = candidates.find(
-      (r) => r.check_out_time === null && r.check_in_status !== "legacy",
+      (r) =>
+        r.check_out_time === null &&
+        r.check_in_status !== "legacy" &&
+        r.check_in_status !== "izin",
     );
 
     if (!openRow) {
@@ -282,6 +307,13 @@ export class AttendanceService {
   static async deleteById(id: number) {
     const row = await AttendanceReadRepository.getById(id);
     if (!row) return null;
+
+    if (row.check_in_status === "izin") {
+      await AttendanceLeaveRepository.deleteApprovedForAttendance(
+        row.user_id,
+        row.attendance_date,
+      );
+    }
 
     const result = await AttendanceWriteRepository.deleteById(id);
     await Promise.all([
