@@ -61,8 +61,10 @@ describe("AttendanceService", () => {
   });
 
   test("allows check-in and check-out outside radius with outside_radius / late_outside_radius status", async () => {
-    let createdStatus: string | null = null;
-    let updatedStatus: string | null = null;
+    const captured: { checkIn: string | null; checkOut: string | null } = {
+      checkIn: null,
+      checkOut: null,
+    };
 
     spies.push(
       spyOn(AttendanceSettingRepository, "getSetting").mockResolvedValue(mockSetting),
@@ -100,14 +102,14 @@ describe("AttendanceService", () => {
           },
         ]),
       spyOn(AttendanceWriteRepository, "createCheckIn").mockImplementation(async (data) => {
-        createdStatus = data.check_in_status;
+        captured.checkIn = data.check_in_status;
         return {} as any;
       }),
       spyOn(AttendanceLeaveRepository, "autoCancelPendingOnCheckIn").mockResolvedValue(
         undefined as any,
       ),
       spyOn(AttendanceWriteRepository, "updateCheckOut").mockImplementation(async (_id, data) => {
-        updatedStatus = data.check_out_status;
+        captured.checkOut = data.check_out_status;
         return {} as any;
       }),
     );
@@ -133,8 +135,8 @@ describe("AttendanceService", () => {
       new Date("2026-11-30T11:00:00.000Z"), // 19:00 WITA next day (late checkout, outside radius)
     );
 
-    expect(createdStatus).toBe("outside_radius");
-    expect(updatedStatus).toBe("late_outside_radius");
+    expect(captured.checkIn).toBe("outside_radius");
+    expect(captured.checkOut).toBe("late_outside_radius");
   });
 
   test("rejects duplicate check-in on same attendance_date", async () => {
