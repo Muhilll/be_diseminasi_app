@@ -315,6 +315,9 @@ describe("AttendanceService", () => {
     const calls: Array<number | undefined> = [];
     spies.push(
       spyOn(AttendanceSettingRepository, "getSetting").mockResolvedValue(mockSetting),
+      spyOn(AttendanceScheduleRepository, "getActiveDaysByUserMap").mockResolvedValue(
+        new Map([[29, [5]]]),
+      ),
       spyOn(AttendanceReadRepository, "getAll").mockImplementation(async (uid) => {
         calls.push(uid);
         return [];

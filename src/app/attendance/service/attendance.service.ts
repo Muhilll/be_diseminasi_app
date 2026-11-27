@@ -102,18 +102,21 @@ export class AttendanceService {
         "/api/attendances",
       );
     const canSeeAll = Boolean(permission?.can_report);
-    const [rows, setting] = await Promise.all([
-      AttendanceReadRepository.getAll(canSeeAll ? undefined : userId),
+    const scopeUserId = canSeeAll ? undefined : userId;
+    const [rows, setting, activeDaysByUser] = await Promise.all([
+      AttendanceReadRepository.getAll(scopeUserId),
       AttendanceSettingRepository.getSetting(),
+      AttendanceScheduleRepository.getActiveDaysByUserMap(scopeUserId),
     ]);
 
     const checkInDeadline = setting?.check_in_deadline ?? "21:00";
     const checkOutDeadline = setting?.check_out_deadline ?? "17:00";
     const now = new Date();
 
-    return rows.map((row) =>
-      mapAttendanceResponse(row, checkInDeadline, checkOutDeadline, now),
-    );
+    return rows.map((row) => ({
+      ...mapAttendanceResponse(row, checkInDeadline, checkOutDeadline, now),
+      schedule_days: activeDaysByUser.get(row.user_id) ?? [],
+    }));
   }
 
   private static async resolveCheckInTarget(

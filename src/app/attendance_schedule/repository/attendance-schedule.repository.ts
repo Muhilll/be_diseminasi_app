@@ -15,6 +15,30 @@ export type UserScheduleDto = {
 };
 
 export class AttendanceScheduleRepository {
+  static async getActiveDaysByUserMap(userId?: number): Promise<Map<number, number[]>> {
+    const whereClause =
+      userId !== undefined
+        ? and(eq(attendance_schedules.is_active, true), eq(attendance_schedules.user_id, userId))
+        : eq(attendance_schedules.is_active, true);
+
+    const rows = await db
+      .select({
+        user_id: attendance_schedules.user_id,
+        day_of_week: attendance_schedules.day_of_week,
+      })
+      .from(attendance_schedules)
+      .where(whereClause)
+      .orderBy(asc(attendance_schedules.day_of_week));
+
+    const map = new Map<number, number[]>();
+    for (const r of rows) {
+      const list = map.get(r.user_id);
+      if (list) list.push(r.day_of_week);
+      else map.set(r.user_id, [r.day_of_week]);
+    }
+    return map;
+  }
+
   static async getScheduleByUserAndDay(userId: number, dayOfWeek: number) {
     const rows = await db
       .select()
