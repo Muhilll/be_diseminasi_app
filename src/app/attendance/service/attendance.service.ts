@@ -208,16 +208,7 @@ export class AttendanceService {
             r.attendance_date === shiftDateString(todayDate, -1) &&
             r.check_out_time === null &&
             r.check_in_status !== "legacy" &&
-            r.check_in_status !== "izin" &&
-            computeEffectiveCheckOutStatus({
-              checkOutTime: r.check_out_time,
-              persistedCheckOutStatus: r.check_out_status,
-              attendanceDate: r.attendance_date,
-              checkInStatus: r.check_in_status,
-              checkInDeadline,
-              checkOutDeadline,
-              now,
-            }) === null,
+            r.check_in_status !== "izin",
         ) ?? null
       : null;
 

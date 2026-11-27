@@ -257,50 +257,58 @@ describe("AttendanceService", () => {
     expect(mapped.check_out_status).toBeNull();
   });
 
-  test("getTodayStatus does not treat yesterday missed_checkout as an active open shift", async () => {
+  test("getTodayStatus keeps yesterday open shift available on Monday until Tuesday 00:00", async () => {
+    const sundayRow = {
+      id: 55,
+      user_id: 29,
+      attendance_date: "2026-11-29",
+      check_in_time: new Date("2026-11-29T12:30:00.000Z"),
+      check_in_lat: -5.147665,
+      check_in_lng: 119.432732,
+      check_in_image: "https://example.com/a.jpg",
+      check_in_image_public_id: "attendance/a",
+      check_in_note: null,
+      check_in_status: "on_time",
+      check_out_time: null,
+      check_out_lat: null,
+      check_out_lng: null,
+      check_out_image: null,
+      check_out_image_public_id: null,
+      check_out_note: null,
+      check_out_status: null,
+      created_at: new Date(),
+      updated_at: new Date(),
+    };
+
     spies.push(
       spyOn(AttendanceSettingRepository, "getSetting").mockResolvedValue(mockSetting),
       spyOn(AttendanceScheduleRepository, "getScheduleByUserAndDay").mockResolvedValue({
         id: 1,
         user_id: 29,
         day_of_week: 1,
-        is_active: true,
+        is_active: false,
         created_at: new Date(),
         updated_at: new Date(),
       }),
       spyOn(AttendanceLeaveRepository, "findByUserAndDate").mockResolvedValue([]),
-      spyOn(AttendanceReadRepository, "findByUserAndDates").mockResolvedValue([
-        {
-          id: 55,
-          user_id: 29,
-          attendance_date: "2026-11-29",
-          check_in_time: new Date("2026-11-29T12:30:00.000Z"),
-          check_in_lat: -5.147665,
-          check_in_lng: 119.432732,
-          check_in_image: "https://example.com/a.jpg",
-          check_in_image_public_id: "attendance/a",
-          check_in_note: null,
-          check_in_status: "on_time",
-          check_out_time: null,
-          check_out_lat: null,
-          check_out_lng: null,
-          check_out_image: null,
-          check_out_image_public_id: null,
-          check_out_note: null,
-          check_out_status: null,
-          created_at: new Date(),
-          updated_at: new Date(),
-        },
-      ]),
+      spyOn(AttendanceReadRepository, "findByUserAndDates").mockImplementation(
+        async (_uid, dates) => (dates.includes("2026-11-29") ? [sundayRow] : []),
+      ),
     );
 
-    // Monday 2026-11-30 20:30 WITA (12:30Z) -> past 17:00 deadline, so Sunday is missed_checkout
-    const today = await AttendanceService.getTodayStatus(
+    // Monday 2026-11-30 20:30 WITA (12:30Z) -> still open for late_checkout
+    const mondayStatus = await AttendanceService.getTodayStatus(
       29,
       new Date("2026-11-30T12:30:00.000Z"),
     );
+    expect(mondayStatus.attendance?.id).toBe(55);
 
-    expect(today.attendance).toBeNull();
+    // Tuesday 2026-12-01 00:00 WITA (2026-11-30T16:00:00Z) -> closed
+    const tuesdayStatus = await AttendanceService.getTodayStatus(
+      29,
+      new Date("2026-11-30T16:00:00.000Z"),
+    );
+    expect(tuesdayStatus.attendance).toBeNull();
   });
 
   test("getAll scopes by userId unless role has can_report on /api/attendances", async () => {
